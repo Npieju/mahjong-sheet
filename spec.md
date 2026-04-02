@@ -27,6 +27,7 @@ Build a static web application that records four-player Japanese mahjong final s
 8. The app must provide CSV export for the displayed result table.
 9. The app must generate a shareable URL that restores the current state.
 10. The app must restore recent state from local browser storage.
+11. The app must tolerate invalid shared URL payloads by falling back safely.
 
 ## Non-Functional Requirements
 
@@ -48,3 +49,9 @@ Build a static web application that records four-player Japanese mahjong final s
 - Verify the exact Mahjong Soul formula, including ranking bonus and rounding.
 - Decide default placement bonus values.
 - Decide compact URL serialization format.
+
+## MVP Assumptions
+
+- Ties are resolved by input order.
+- Oka is awarded only to first place.
+- Settlement display uses point units divided by 1000.
