@@ -4,10 +4,11 @@ Static web app for Japanese mahjong score sheet calculation.
 
 ## Current MVP
 
-- Four-player name and score input
-- 25000 start / 30000 return based settlement calculation
-- Configurable placement bonus table
-- Oka toggle
+- Multi-game table input
+- Player names as columns
+- Automatic completion of the fourth score when three scores are entered
+- Mahjong Soul style final score calculation
+- Seat-order tie-break
 - CSV export
 - Shareable URL output
 - Browser-side state restoration

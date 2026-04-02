@@ -6,10 +6,11 @@ Build a static web application that records four-player Japanese mahjong final s
 
 ## Goals
 
-- Input four player scores based on a 25000-point start.
-- Calculate score differences against a 30000-point return baseline.
-- Apply placement-based adjustments.
-- Present a settlement table that is easy to read and export.
+- Input repeated four-player game results in a table.
+- Use player names as table columns.
+- Auto-complete the fourth score when the other three are present.
+- Reproduce Mahjong Soul style final score settlement.
+- Accumulate results across multiple games.
 - Support CSV export.
 - Support shareable URLs by encoding app state into the URL.
 - Persist recent state in the browser without a backend.
@@ -17,17 +18,21 @@ Build a static web application that records four-player Japanese mahjong final s
 
 ## Functional Requirements
 
-1. The app must allow entry of four player names.
-2. The app must allow entry of four final scores.
-3. The app must validate that entered scores are numeric.
-4. The app should warn when the total score does not match expected total points.
-5. The app must rank players by score.
-6. The app must calculate score settlement relative to 30000-point return.
-7. The app must apply configurable placement bonuses.
-8. The app must provide CSV export for the displayed result table.
-9. The app must generate a shareable URL that restores the current state.
-10. The app must restore recent state from local browser storage.
-11. The app must tolerate invalid shared URL payloads by falling back safely.
+1. The app must allow entry of four player names as table columns.
+2. The app must allow entry of multiple games as table rows.
+3. The app must allow entry of up to four final scores per row.
+4. The app must auto-complete the remaining score when exactly three scores are entered.
+5. The app must validate that entered scores are numeric integers.
+6. The app must flag rows whose total score does not equal 100000.
+7. The app must rank players by score.
+8. The app must break ties by seat order.
+9. The app must calculate final scores using Mahjong Soul style 25000 start / 30000 return / +15 +5 -5 -15 uma.
+10. The app must correct rounding drift back to zero-sum.
+11. The app must accumulate results across completed games.
+12. The app must provide CSV export for the displayed result table.
+13. The app must generate a shareable URL that restores the current state.
+14. The app must restore recent state from local browser storage.
+15. The app must tolerate invalid shared URL payloads by falling back safely.
 
 ## Non-Functional Requirements
 
@@ -44,14 +49,14 @@ Build a static web application that records four-player Japanese mahjong final s
 - State: URL query/hash plus localStorage.
 - Deployment: GitHub Actions to GitHub Pages.
 
+## Confirmed Rules
+
+- 4-player Mahjong Soul style final score uses 25000 start and 30000 return.
+- Uma is `+15 / +5 / -5 / -15`.
+- Seat wind tie-breaker is applied.
+- Final score rounding is nearest integer with `0.5` rounded down.
+- Any rounding drift is corrected on first place to restore zero-sum.
+
 ## Pending Research
 
-- Verify the exact Mahjong Soul formula, including ranking bonus and rounding.
-- Decide default placement bonus values.
-- Decide compact URL serialization format.
-
-## MVP Assumptions
-
-- Ties are resolved by input order.
-- Oka is awarded only to first place.
-- Settlement display uses point units divided by 1000.
+- Compact URL serialization format can still be improved.

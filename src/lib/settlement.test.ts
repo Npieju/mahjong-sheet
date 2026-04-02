@@ -1,59 +1,52 @@
 import { describe, expect, it } from 'vitest';
-import { calculateOka, calculateScoreTotal, calculateSettlement } from './settlement';
+import { calculateGameResults, getStandings, roundHalfDown } from './settlement';
 
-describe('calculateSettlement', () => {
-  it('keeps total settlement at zero with oka and placement bonuses', () => {
-    const results = calculateSettlement(
-      [
-        { id: 'p1', name: 'A', score: 35200 },
-        { id: 'p2', name: 'B', score: 28100 },
-        { id: 'p3', name: 'C', score: 21900 },
-        { id: 'p4', name: 'D', score: 14800 },
-      ],
-      {
-        startPoint: 25000,
-        returnPoint: 30000,
-        placementBonus: [10, 5, -5, -10],
-        applyOka: true,
-      },
-    );
+describe('calculateGameResults', () => {
+  it('applies Mahjong Soul style end-score calculation', () => {
+    const results = calculateGameResults([
+      { seat: 0, name: '東', score: 35700 },
+      { seat: 1, name: '南', score: 32400 },
+      { seat: 2, name: '西', score: 22200 },
+      { seat: 3, name: '北', score: 9700 },
+    ]);
 
-    const total = results.reduce((sum, result) => sum + result.settlement, 0);
-    expect(total).toBeCloseTo(0, 8);
-    expect(results[0].settlement).toBeCloseTo(35.2, 8);
+    expect(results.map((result) => result.total)).toEqual([41, 7, -13, -35]);
+    expect(results.map((result) => result.rank)).toEqual([1, 2, 3, 4]);
   });
 
-  it('sorts by score descending and then id', () => {
-    const results = calculateSettlement(
-      [
-        { id: 'p2', name: 'B', score: 21000 },
-        { id: 'p1', name: 'A', score: 40000 },
-        { id: 'p4', name: 'D', score: 18000 },
-        { id: 'p3', name: 'C', score: 21000 },
-      ],
-      {
-        startPoint: 25000,
-        returnPoint: 30000,
-        placementBonus: [10, 5, -5, -10],
-        applyOka: true,
-      },
-    );
+  it('breaks ties by seat order', () => {
+    const results = calculateGameResults([
+      { seat: 0, name: '東', score: 30000 },
+      { seat: 1, name: '南', score: 30000 },
+      { seat: 2, name: '西', score: 25000 },
+      { seat: 3, name: '北', score: 15000 },
+    ]);
 
-    expect(results.map((result) => result.id)).toEqual(['p1', 'p2', 'p3', 'p4']);
+    expect(results.map((result) => result.rank)).toEqual([1, 2, 3, 4]);
   });
 
-  it('computes the 25000 to 30000 oka as 20', () => {
-    expect(calculateOka(25000, 30000)).toBe(20);
+  it('corrects rounding drift back to zero-sum on the winner', () => {
+    const results = calculateGameResults([
+      { seat: 0, name: '東', score: 69500 },
+      { seat: 1, name: '南', score: 30500 },
+      { seat: 2, name: '西', score: 0 },
+      { seat: 3, name: '北', score: 0 },
+    ]);
+
+    expect(results.reduce((sum, result) => sum + result.total, 0)).toBe(0);
+    expect(results[0].total).toBe(75);
+  });
+});
+
+describe('helpers', () => {
+  it('rounds halves down', () => {
+    expect(roundHalfDown(35.7)).toBe(36);
+    expect(roundHalfDown(35.5)).toBe(35);
+    expect(roundHalfDown(-12.5)).toBe(-12);
   });
 
-  it('sums player scores', () => {
-    expect(
-      calculateScoreTotal([
-        { id: 'p1', name: 'A', score: 25000 },
-        { id: 'p2', name: 'B', score: 25000 },
-        { id: 'p3', name: 'C', score: 25000 },
-        { id: 'p4', name: 'D', score: 25000 },
-      ]),
-    ).toBe(100000);
+  it('builds standings with seat-order tie-break', () => {
+    const standings = getStandings(['東', '南', '西', '北'], [20, 20, -10, -30]);
+    expect(standings.map((entry) => entry.seat)).toEqual([0, 1, 2, 3]);
   });
 });

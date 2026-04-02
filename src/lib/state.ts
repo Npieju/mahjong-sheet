@@ -1,8 +1,8 @@
-import type { PlayerInput, RuleConfig } from './settlement';
+import type { GameRow } from './sheet';
 
 export type AppState = {
-  players: PlayerInput[];
-  rules: RuleConfig;
+  playerNames: [string, string, string, string];
+  games: GameRow[];
 };
 
 const STORAGE_KEY = 'mahjong-sheet-state';

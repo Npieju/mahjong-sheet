@@ -1,54 +1,96 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
+import { createGameRow, isRowEmpty, resolveGameRow, TOTAL_POINTS, type GameRow } from './lib/sheet';
 import { buildShareUrl, loadSavedState, readSharedState, saveState, serializeState } from './lib/state';
-import { calculateScoreTotal, calculateSettlement, formatDelta, type PlayerInput } from './lib/settlement';
+import { calculateGameResults, formatDelta, getStandings, MAHJONG_SOUL_RULE } from './lib/settlement';
 
 function App() {
-  const sharedState = readSharedState();
-  const savedState = loadSavedState();
-
-  const [players, setPlayers] = useState<PlayerInput[]>(sharedState?.players ?? savedState?.players ?? defaultState.players);
-  const [rules, setRules] = useState(sharedState?.rules ?? savedState?.rules ?? defaultState.rules);
+  const initialState = readSharedState() ?? loadSavedState() ?? defaultState;
+  const [playerNames, setPlayerNames] = useState(initialState.playerNames);
+  const [games, setGames] = useState<GameRow[]>(initialState.games);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    saveState({ players, rules });
-  }, [players, rules]);
+    saveState({ playerNames, games });
+  }, [games, playerNames]);
 
-  const results = useMemo(() => calculateSettlement(players, rules), [players, rules]);
-  const totalScore = useMemo(() => calculateScoreTotal(players), [players]);
-  const expectedTotal = rules.startPoint * 4;
-  const shareUrl = useMemo(() => buildShareUrl(serializeState({ players, rules })), [players, rules]);
+  const evaluatedGames = useMemo(
+    () =>
+      games.map((row) => {
+        const resolution = resolveGameRow(row, TOTAL_POINTS);
 
-  const updatePlayer = (playerId: string, field: 'name' | 'score', value: string) => {
-    setPlayers((currentPlayers) =>
-      currentPlayers.map((player) => {
-        if (player.id !== playerId) {
-          return player;
+        if (resolution.kind !== 'complete') {
+          return { row, resolution, results: null };
         }
 
-        if (field === 'score') {
-          const nextScore = Number(value);
-          return { ...player, score: Number.isFinite(nextScore) ? nextScore : 0 };
+        return {
+          row,
+          resolution,
+          results: calculateGameResults(
+            resolution.scores.map((score, seat) => ({
+              seat,
+              name: playerNames[seat],
+              score,
+            })),
+          ),
+        };
+      }),
+    [games, playerNames],
+  );
+
+  const completeGames = evaluatedGames.filter((game) => game.results !== null);
+  const cumulativeTotals = useMemo(() => {
+    const totals = [0, 0, 0, 0];
+
+    for (const game of completeGames) {
+      for (const result of game.results ?? []) {
+        totals[result.seat] += result.total;
+      }
+    }
+
+    return totals as [number, number, number, number];
+  }, [completeGames]);
+  const standings = useMemo(() => getStandings(playerNames, cumulativeTotals), [cumulativeTotals, playerNames]);
+  const shareUrl = useMemo(() => buildShareUrl(serializeState({ playerNames, games })), [games, playerNames]);
+
+  const updatePlayerName = (seat: number, value: string) => {
+    setPlayerNames((current) => current.map((name, index) => (index === seat ? value : name)) as typeof current);
+  };
+
+  const updateGameScore = (rowId: string, seat: number, value: string) => {
+    if (!/^-?\d*$/.test(value)) {
+      return;
+    }
+
+    setGames((currentGames) =>
+      currentGames.map((row) => {
+        if (row.id !== rowId) {
+          return row;
         }
 
-        return { ...player, name: value };
+        const scores = [...row.scores] as GameRow['scores'];
+        scores[seat] = value;
+        return { ...row, scores };
       }),
     );
   };
 
-  const updatePlacementBonus = (index: number, value: string) => {
-    const nextValue = Number(value);
-    setRules((currentRules) => {
-      const placementBonus = [...currentRules.placementBonus] as [number, number, number, number];
-      placementBonus[index] = Number.isFinite(nextValue) ? nextValue : 0;
-      return { ...currentRules, placementBonus };
+  const addGame = () => {
+    setGames((currentGames) => [...currentGames, createGameRow()]);
+  };
+
+  const removeGame = (rowId: string) => {
+    setGames((currentGames) => {
+      const nextGames = currentGames.filter((row) => row.id !== rowId);
+      return nextGames.length > 0 ? nextGames : [createGameRow()];
     });
   };
 
   const downloadCsv = () => {
-    const blob = new Blob([buildCsv(results)], { type: 'text/csv;charset=utf-8' });
+    const blob = new Blob([buildCsv(playerNames, evaluatedGames, cumulativeTotals)], {
+      type: 'text/csv;charset=utf-8',
+    });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -60,149 +102,134 @@ function App() {
   const copyShareUrl = async () => {
     await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 1500);
+    window.setTimeout(() => setCopied(false), 1200);
   };
 
   return (
     <main className="app-shell">
-      <section className="hero">
-        <p className="eyebrow">Mahjong Score Sheet</p>
-        <h1>4人麻雀の精算を、静的アプリで素早く。</h1>
-        <p className="lead">
-          25000点持ち、30000点返し、順位点、CSV 出力、URL 共有をひとつの静的ページにまとめた
-          スコアシートです。
-        </p>
+      <header className="topbar">
+        <h1>麻雀スコアシート</h1>
+        <p>雀魂式 4麻 / 25000持ち / 30000返し / ウマ +15 +5 -5 -15 / 同点は座順優先</p>
+      </header>
+
+      <section className="summary-strip">
+        {standings.map((entry) => (
+          <article className="summary-card" key={entry.seat}>
+            <div className="summary-rank">{entry.rank}位</div>
+            <div className="summary-name">{entry.name}</div>
+            <div className="summary-score">{formatDelta(entry.total)}</div>
+          </article>
+        ))}
       </section>
 
-      <section className="dashboard-grid">
-        <section className="panel input-panel">
-          <div className="panel-header">
-            <h2>入力</h2>
-            <span>同点時は入力順で順位決定</span>
-          </div>
+      <section className="table-panel">
+        <div className="toolbar">
+          <button type="button" onClick={addGame}>行を追加</button>
+          <button type="button" onClick={downloadCsv}>CSV</button>
+          <button type="button" onClick={copyShareUrl}>{copied ? 'URLコピー済み' : 'URLをコピー'}</button>
+        </div>
 
-          <div className="player-grid">
-            {players.map((player, index) => (
-              <article className="player-card" key={player.id}>
-                <label>
-                  <span>プレイヤー {index + 1}</span>
-                  <input
-                    type="text"
-                    value={player.name}
-                    onChange={(event) => updatePlayer(player.id, 'name', event.target.value)}
-                  />
-                </label>
-                <label>
-                  <span>素点</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={player.score}
-                    onChange={(event) => updatePlayer(player.id, 'score', event.target.value)}
-                  />
-                </label>
-              </article>
-            ))}
-          </div>
-
-          <div className="rules-grid">
-            <label>
-              <span>持ち点</span>
-              <input
-                type="number"
-                value={rules.startPoint}
-                onChange={(event) =>
-                  setRules((currentRules) => ({ ...currentRules, startPoint: Number(event.target.value) || 0 }))
-                }
-              />
-            </label>
-            <label>
-              <span>返し点</span>
-              <input
-                type="number"
-                value={rules.returnPoint}
-                onChange={(event) =>
-                  setRules((currentRules) => ({ ...currentRules, returnPoint: Number(event.target.value) || 0 }))
-                }
-              />
-            </label>
-            <label className="toggle-row">
-              <span>オカを適用</span>
-              <input
-                type="checkbox"
-                checked={rules.applyOka}
-                onChange={(event) =>
-                  setRules((currentRules) => ({ ...currentRules, applyOka: event.target.checked }))
-                }
-              />
-            </label>
-          </div>
-
-          <div className="bonus-grid">
-            {rules.placementBonus.map((bonus, index) => (
-              <label key={`bonus-${index}`}>
-                <span>{index + 1}位 順位点</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={bonus}
-                  onChange={(event) => updatePlacementBonus(index, event.target.value)}
-                />
-              </label>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel results-panel">
-          <div className="panel-header">
-            <h2>精算結果</h2>
-            <span>{totalScore.toLocaleString()} / {expectedTotal.toLocaleString()} 点</span>
-          </div>
-
-          <div className={`status-card ${totalScore === expectedTotal ? 'ok' : 'warn'}`}>
-            {totalScore === expectedTotal
-              ? '点数合計は期待値どおりです。'
-              : `点数合計が ${expectedTotal.toLocaleString()} 点から ${(totalScore - expectedTotal).toLocaleString()} 点ずれています。`}
-          </div>
-
-          <table>
+        <div className="table-wrap">
+          <table className="score-table">
             <thead>
               <tr>
-                <th>順位</th>
-                <th>名前</th>
-                <th>素点</th>
-                <th>返し差</th>
-                <th>順位点</th>
-                <th>オカ</th>
-                <th>精算</th>
+                <th>Game</th>
+                {playerNames.map((name, seat) => (
+                  <th key={`name-${seat}`}>
+                    <input
+                      className="name-input"
+                      type="text"
+                      value={name}
+                      onChange={(event) => updatePlayerName(seat, event.target.value)}
+                    />
+                  </th>
+                ))}
+                <th>状態</th>
+                <th />
               </tr>
             </thead>
             <tbody>
-              {results.map((result) => (
-                <tr key={result.id}>
-                  <td>{result.rank}</td>
-                  <td>{result.name}</td>
-                  <td>{result.score.toLocaleString()}</td>
-                  <td>{formatDelta(result.baseDelta)}</td>
-                  <td>{formatDelta(result.placementDelta)}</td>
-                  <td>{formatDelta(result.okaDelta)}</td>
-                  <td className="settlement-cell">{formatDelta(result.settlement)}</td>
-                </tr>
-              ))}
+              {evaluatedGames.map((game, gameIndex) => {
+                const autoFilledSeat = game.resolution.kind === 'complete' ? game.resolution.autoFilledSeat : null;
+                const rowStatus =
+                  game.resolution.kind === 'empty'
+                    ? '未入力'
+                    : game.resolution.kind === 'partial'
+                      ? '3人入力で補完'
+                      : game.resolution.kind === 'invalid'
+                        ? '数値のみ'
+                        : game.resolution.kind === 'mismatch'
+                          ? `合計 ${game.resolution.diff > 0 ? '+' : ''}${game.resolution.diff}`
+                          : autoFilledSeat === null
+                            ? 'OK'
+                            : '自動補完';
+
+                return (
+                  <tr key={game.row.id} className={game.resolution.kind === 'mismatch' ? 'row-warn' : undefined}>
+                    <th scope="row">{gameIndex + 1}</th>
+                    {game.row.scores.map((score, seat) => {
+                      const result = game.results?.find((entry) => entry.seat === seat) ?? null;
+                      const isAuto = autoFilledSeat === seat;
+                      const displayValue = isAuto && game.resolution.kind === 'complete' ? String(game.resolution.scores[seat]) : score;
+
+                      return (
+                        <td key={`${game.row.id}-${seat}`} className={isAuto ? 'auto-cell' : undefined}>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={displayValue}
+                            disabled={isAuto}
+                            onChange={(event) => updateGameScore(game.row.id, seat, event.target.value)}
+                          />
+                          {result ? (
+                            <div className={`result-chip ${result.total >= 0 ? 'plus' : 'minus'}`}>
+                              {formatDelta(result.total)}
+                            </div>
+                          ) : null}
+                        </td>
+                      );
+                    })}
+                    <td className="status-cell">{rowStatus}</td>
+                    <td className="remove-cell">
+                      <button type="button" className="ghost-button" onClick={() => removeGame(game.row.id)}>
+                        削除
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
+            <tfoot>
+              <tr>
+                <th>通算</th>
+                {cumulativeTotals.map((total, seat) => (
+                  <td key={`total-${seat}`}>
+                    <div className={`result-chip ${total >= 0 ? 'plus' : 'minus'}`}>{formatDelta(total)}</div>
+                  </td>
+                ))}
+                <td>{completeGames.length}局</td>
+                <td />
+              </tr>
+            </tfoot>
           </table>
+        </div>
 
-          <div className="action-row">
-            <button type="button" onClick={downloadCsv}>CSV を保存</button>
-            <button type="button" onClick={copyShareUrl}>{copied ? 'コピー済み' : '共有 URL をコピー'}</button>
-          </div>
+        <div className="notes-row">
+          <span>空欄を 1 つだけ残すと 4 人目を自動補完します。</span>
+          <span>URL と localStorage に保存します。</span>
+        </div>
 
-          <label className="share-box">
-            <span>共有 URL</span>
-            <textarea value={shareUrl} readOnly rows={4} />
-          </label>
-        </section>
+        <input className="share-input" type="text" readOnly value={shareUrl} />
       </section>
+
+      <section className="rule-panel">
+        <div>持ち点 {MAHJONG_SOUL_RULE.startPoint.toLocaleString()}</div>
+        <div>返し点 {MAHJONG_SOUL_RULE.returnPoint.toLocaleString()}</div>
+        <div>オカ {(MAHJONG_SOUL_RULE.okaPoints / 1000).toFixed(0)}</div>
+        <div>合計 {TOTAL_POINTS.toLocaleString()} 点</div>
+      </section>
+
+      <section className="empty-hint">{games.every((row) => isRowEmpty(row)) ? 'まず 1 行入れれば動きます。' : null}</section>
     </main>
   );
 }

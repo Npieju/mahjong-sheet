@@ -1,64 +1,110 @@
-export type PlayerInput = {
-  id: string;
+export type MahjongSoulPlayer = {
+  seat: number;
   name: string;
   score: number;
 };
 
-export type RuleConfig = {
+export type MahjongSoulRule = {
   startPoint: number;
   returnPoint: number;
-  placementBonus: [number, number, number, number];
-  applyOka: boolean;
+  uma: [number, number, number, number];
+  okaPoints: number;
 };
 
-export type PlayerResult = PlayerInput & {
+export type MahjongSoulResult = MahjongSoulPlayer & {
   rank: number;
-  baseDelta: number;
-  placementDelta: number;
-  okaDelta: number;
-  settlement: number;
+  roundedBase: number;
+  uma: number;
+  total: number;
 };
 
-const toPointUnit = (score: number, returnPoint: number) => (score - returnPoint) / 1000;
+export type Standing = {
+  seat: number;
+  name: string;
+  rank: number;
+  total: number;
+};
 
-export const calculateOka = (startPoint: number, returnPoint: number) =>
-  ((returnPoint - startPoint) * 4) / 1000;
+export const MAHJONG_SOUL_RULE: MahjongSoulRule = {
+  startPoint: 25000,
+  returnPoint: 30000,
+  uma: [15, 5, -5, -15],
+  okaPoints: 20000,
+};
 
-export function rankPlayers(players: PlayerInput[]) {
+export function roundHalfDown(value: number) {
+  const absolute = Math.abs(value);
+  const base = Math.floor(absolute);
+  const fraction = absolute - base;
+  const rounded = fraction > 0.5 ? base + 1 : base;
+
+  return value < 0 ? -rounded : rounded;
+}
+
+export function getPlacementOrder(players: MahjongSoulPlayer[]) {
   return [...players].sort((left, right) => {
     if (right.score !== left.score) {
       return right.score - left.score;
     }
 
-    return left.id.localeCompare(right.id);
+    return left.seat - right.seat;
   });
 }
 
-export function calculateSettlement(players: PlayerInput[], rules: RuleConfig): PlayerResult[] {
-  const ranked = rankPlayers(players);
-  const oka = rules.applyOka ? calculateOka(rules.startPoint, rules.returnPoint) : 0;
+export function calculateGameResults(players: MahjongSoulPlayer[], rules: MahjongSoulRule = MAHJONG_SOUL_RULE) {
+  const placements = getPlacementOrder(players);
+  const bySeat = new Map<number, MahjongSoulResult>();
 
-  return ranked.map((player, index) => {
-    const baseDelta = toPointUnit(player.score, rules.returnPoint);
-    const placementDelta = rules.placementBonus[index] ?? 0;
-    const okaDelta = index === 0 ? oka : 0;
-    const settlement = baseDelta + placementDelta + okaDelta;
+  for (const [index, player] of placements.entries()) {
+    const rank = index + 1;
+    const oka = index === 0 ? rules.okaPoints : 0;
+    const roundedBase = roundHalfDown((player.score + oka - rules.returnPoint) / 1000);
+    const uma = rules.uma[index] ?? 0;
 
-    return {
+    bySeat.set(player.seat, {
       ...player,
-      rank: index + 1,
-      baseDelta,
-      placementDelta,
-      okaDelta,
-      settlement,
-    };
-  });
+      rank,
+      roundedBase,
+      uma,
+      total: roundedBase + uma,
+    });
+  }
+
+  const results = [...bySeat.values()].sort((left, right) => left.seat - right.seat);
+  const diff = results.reduce((sum, result) => sum + result.total, 0);
+
+  if (diff !== 0) {
+    const winner = placements[0];
+    const winnerResult = bySeat.get(winner.seat);
+
+    if (winnerResult) {
+      winnerResult.total -= diff;
+    }
+  }
+
+  return [...bySeat.values()].sort((left, right) => left.seat - right.seat);
 }
 
-export function calculateScoreTotal(players: PlayerInput[]) {
-  return players.reduce((sum, player) => sum + player.score, 0);
+export function getStandings(playerNames: readonly string[], totals: readonly number[]) {
+  return [...totals]
+    .map((total, seat) => ({
+      seat,
+      name: playerNames[seat],
+      total,
+    }))
+    .sort((left, right) => {
+      if (right.total !== left.total) {
+        return right.total - left.total;
+      }
+
+      return left.seat - right.seat;
+    })
+    .map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+    })) as Standing[];
 }
 
 export function formatDelta(value: number) {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}`;
+  return `${value >= 0 ? '+' : ''}${value}`;
 }
