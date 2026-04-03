@@ -97,12 +97,12 @@ function App() {
     setPlayerNames((current) => current.map((name, index) => (index === seat ? value : name)) as typeof current);
   };
 
-  const updateRuleNumber = (key: 'startPoint' | 'returnPoint', value: string) => {
-    const nextValue = Number.parseInt(value, 10);
-
-    if (Number.isNaN(nextValue)) {
+  const updateRulePointUnits = (key: 'startPoint' | 'returnPoint', value: string) => {
+    if (!/^\d{0,4}$/.test(value)) {
       return;
     }
+
+    const nextValue = value === '' ? 0 : Number.parseInt(value, 10) * SCORE_UNIT;
 
     setRules((current) => ({ ...current, [key]: nextValue }));
   };
@@ -226,11 +226,31 @@ function App() {
               <div className="settings-grid">
                 <label className="settings-field">
                   <span>持ち点</span>
-                  <input type="number" value={rules.startPoint} onChange={(event) => updateRuleNumber('startPoint', event.target.value)} />
+                  <div className="settings-point-wrap">
+                    <input
+                      className="settings-point-input"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={String(rules.startPoint / SCORE_UNIT)}
+                      onChange={(event) => updateRulePointUnits('startPoint', event.target.value)}
+                    />
+                    <span className="settings-point-suffix">00</span>
+                  </div>
                 </label>
                 <label className="settings-field">
                   <span>返し点</span>
-                  <input type="number" value={rules.returnPoint} onChange={(event) => updateRuleNumber('returnPoint', event.target.value)} />
+                  <div className="settings-point-wrap">
+                    <input
+                      className="settings-point-input"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={String(rules.returnPoint / SCORE_UNIT)}
+                      onChange={(event) => updateRulePointUnits('returnPoint', event.target.value)}
+                    />
+                    <span className="settings-point-suffix">00</span>
+                  </div>
                 </label>
                 <label className="settings-field">
                   <span>オカ</span>

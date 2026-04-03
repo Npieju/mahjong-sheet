@@ -177,6 +177,26 @@ textarea {
   background: #fff;
 }
 
+.settings-point-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.settings-point-input {
+  width: 5ch;
+  min-width: 5ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-point-suffix {
+  width: 1.9ch;
+  color: #6a6a6a;
+  font-variant-numeric: tabular-nums;
+}
+
 .settings-field-wide {
   grid-column: 1 / -1;
 }
