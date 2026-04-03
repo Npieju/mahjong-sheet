@@ -16,7 +16,7 @@ export type MahjongSoulRule = ScoringRule;
 
 export type MahjongSoulResult = MahjongSoulPlayer & {
   rank: number;
-  roundedBase: number;
+  baseScore: number;
   uma: number;
   total: number;
 };
@@ -30,9 +30,9 @@ export type Standing = {
 
 export const DEFAULT_RULE: ScoringRule = {
   startPoint: 25000,
-  returnPoint: 30000,
+  returnPoint: 25000,
   uma: [15, 5, -5, -15],
-  okaPoints: 20000,
+  okaPoints: 0,
 };
 
 export const MAHJONG_SOUL_RULE = DEFAULT_RULE;
@@ -73,13 +73,8 @@ export function isDefaultRule(rule: ScoringRule) {
     && rule.uma.every((value, index) => value === DEFAULT_RULE.uma[index]);
 }
 
-export function roundHalfDown(value: number) {
-  const absolute = Math.abs(value);
-  const base = Math.floor(absolute);
-  const fraction = absolute - base;
-  const rounded = fraction > 0.5 ? base + 1 : base;
-
-  return value < 0 ? -rounded : rounded;
+function roundToTenths(value: number) {
+  return Math.round(value * 10) / 10;
 }
 
 export function getPlacementOrder(players: MahjongSoulPlayer[]) {
@@ -99,27 +94,27 @@ export function calculateGameResults(players: MahjongSoulPlayer[], rules: Scorin
   for (const [index, player] of placements.entries()) {
     const rank = index + 1;
     const oka = index === 0 ? rules.okaPoints : 0;
-    const roundedBase = roundHalfDown((player.score + oka - rules.returnPoint) / 1000);
+    const baseScore = roundToTenths((player.score + oka - rules.returnPoint) / 1000);
     const uma = rules.uma[index] ?? 0;
 
     bySeat.set(player.seat, {
       ...player,
       rank,
-      roundedBase,
+      baseScore,
       uma,
-      total: roundedBase + uma,
+      total: roundToTenths(baseScore + uma),
     });
   }
 
   const results = [...bySeat.values()].sort((left, right) => left.seat - right.seat);
-  const diff = results.reduce((sum, result) => sum + result.total, 0);
+  const diff = roundToTenths(results.reduce((sum, result) => sum + result.total, 0));
 
   if (diff !== 0) {
     const winner = placements[0];
     const winnerResult = bySeat.get(winner.seat);
 
     if (winnerResult) {
-      winnerResult.total -= diff;
+      winnerResult.total = roundToTenths(winnerResult.total - diff);
     }
   }
 
@@ -147,5 +142,6 @@ export function getStandings(playerNames: readonly string[], totals: readonly nu
 }
 
 export function formatDelta(value: number) {
-  return `${value >= 0 ? '+' : ''}${value}`;
+  const rounded = roundToTenths(value);
+  return `${rounded >= 0 ? '+' : ''}${rounded.toFixed(1)}`;
 }

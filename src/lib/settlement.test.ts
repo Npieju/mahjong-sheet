@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { calculateGameResults, getStandings, roundHalfDown } from './settlement';
+import { calculateGameResults, formatDelta, getStandings } from './settlement';
 
 describe('calculateGameResults', () => {
-  it('applies Mahjong Soul style end-score calculation', () => {
+  it('matches Mahjong Soul style end-score display for a real result', () => {
     const results = calculateGameResults([
-      { seat: 0, name: '東', score: 35700 },
-      { seat: 1, name: '南', score: 32400 },
-      { seat: 2, name: '西', score: 22200 },
-      { seat: 3, name: '北', score: 9700 },
+      { seat: 0, name: '東', score: 44900 },
+      { seat: 1, name: '南', score: 34300 },
+      { seat: 2, name: '西', score: 22900 },
+      { seat: 3, name: '北', score: -2100 },
     ]);
 
-    expect(results.map((result) => result.total)).toEqual([41, 7, -13, -35]);
+    expect(results.map((result) => result.total)).toEqual([34.9, 14.3, -7.1, -42.1]);
     expect(results.map((result) => result.rank)).toEqual([1, 2, 3, 4]);
   });
 
@@ -36,7 +36,7 @@ describe('calculateGameResults', () => {
     expect(results.map((result) => result.rank)).toEqual([2, 1, 3, 4]);
   });
 
-  it('corrects rounding drift back to zero-sum on the winner', () => {
+  it('keeps totals zero-sum after decimal calculation', () => {
     const results = calculateGameResults([
       { seat: 0, name: '東', score: 69500 },
       { seat: 1, name: '南', score: 30500 },
@@ -45,7 +45,7 @@ describe('calculateGameResults', () => {
     ]);
 
     expect(results.reduce((sum, result) => sum + result.total, 0)).toBe(0);
-    expect(results[0].total).toBe(75);
+    expect(results[0].total).toBe(59.5);
   });
 
   it('applies custom oka and uma settings', () => {
@@ -59,19 +59,19 @@ describe('calculateGameResults', () => {
       { startPoint: 30000, returnPoint: 30000, okaPoints: 0, uma: [20, 10, -10, -20] },
     );
 
-    expect(results.map((result) => result.total)).toEqual([26, 12, -8, -30]);
+    expect(results.map((result) => result.total)).toEqual([25.7, 12.4, -7.8, -30.3]);
   });
 });
 
 describe('helpers', () => {
-  it('rounds halves down', () => {
-    expect(roundHalfDown(35.7)).toBe(36);
-    expect(roundHalfDown(35.5)).toBe(35);
-    expect(roundHalfDown(-12.5)).toBe(-12);
+  it('formats deltas with one decimal place', () => {
+    expect(formatDelta(34.9)).toBe('+34.9');
+    expect(formatDelta(-42.1)).toBe('-42.1');
+    expect(formatDelta(10)).toBe('+10.0');
   });
 
   it('builds standings with seat-order tie-break', () => {
-    const standings = getStandings(['東', '南', '西', '北'], [20, 20, -10, -30]);
+    const standings = getStandings(['東', '南', '西', '北'], [20.1, 20.1, -10.4, -29.8]);
     expect(standings.map((entry) => entry.seat)).toEqual([0, 1, 2, 3]);
   });
 });
