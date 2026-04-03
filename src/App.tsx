@@ -284,6 +284,9 @@ function App() {
                     })}
                     <td className="remove-cell">
                       <div className="row-actions">
+                        <button type="button" className="ghost-button" onClick={() => removeGame(game.row.id)}>
+                          ×
+                        </button>
                         <button
                           type="button"
                           className="ghost-button"
@@ -292,9 +295,6 @@ function App() {
                           aria-label={`この行を再計算する`}
                         >
                           ↻
-                        </button>
-                        <button type="button" className="ghost-button" onClick={() => removeGame(game.row.id)}>
-                          ×
                         </button>
                       </div>
                     </td>
