@@ -5,12 +5,14 @@ export type MahjongSoulPlayer = {
   tieBreakOrder?: number;
 };
 
-export type MahjongSoulRule = {
+export type ScoringRule = {
   startPoint: number;
   returnPoint: number;
   uma: [number, number, number, number];
   okaPoints: number;
 };
+
+export type MahjongSoulRule = ScoringRule;
 
 export type MahjongSoulResult = MahjongSoulPlayer & {
   rank: number;
@@ -26,12 +28,50 @@ export type Standing = {
   total: number;
 };
 
-export const MAHJONG_SOUL_RULE: MahjongSoulRule = {
+export const DEFAULT_RULE: ScoringRule = {
   startPoint: 25000,
   returnPoint: 30000,
   uma: [15, 5, -5, -15],
   okaPoints: 20000,
 };
+
+export const MAHJONG_SOUL_RULE = DEFAULT_RULE;
+
+function toInteger(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : null;
+}
+
+export function normalizeRule(value: unknown): ScoringRule {
+  if (typeof value !== 'object' || value === null) {
+    return DEFAULT_RULE;
+  }
+
+  const candidate = value as Partial<ScoringRule>;
+  const startPoint = toInteger(candidate.startPoint);
+  const returnPoint = toInteger(candidate.returnPoint);
+  const okaPoints = toInteger(candidate.okaPoints);
+  const uma = Array.isArray(candidate.uma) && candidate.uma.length === 4
+    ? candidate.uma.map((entry) => toInteger(entry) ?? 0)
+    : null;
+
+  if (startPoint === null || returnPoint === null || okaPoints === null || uma === null) {
+    return DEFAULT_RULE;
+  }
+
+  return {
+    startPoint,
+    returnPoint,
+    okaPoints,
+    uma: uma as [number, number, number, number],
+  };
+}
+
+export function isDefaultRule(rule: ScoringRule) {
+  return rule.startPoint === DEFAULT_RULE.startPoint
+    && rule.returnPoint === DEFAULT_RULE.returnPoint
+    && rule.okaPoints === DEFAULT_RULE.okaPoints
+    && rule.uma.every((value, index) => value === DEFAULT_RULE.uma[index]);
+}
 
 export function roundHalfDown(value: number) {
   const absolute = Math.abs(value);
@@ -52,7 +92,7 @@ export function getPlacementOrder(players: MahjongSoulPlayer[]) {
   });
 }
 
-export function calculateGameResults(players: MahjongSoulPlayer[], rules: MahjongSoulRule = MAHJONG_SOUL_RULE) {
+export function calculateGameResults(players: MahjongSoulPlayer[], rules: ScoringRule = DEFAULT_RULE) {
   const placements = getPlacementOrder(players);
   const bySeat = new Map<number, MahjongSoulResult>();
 

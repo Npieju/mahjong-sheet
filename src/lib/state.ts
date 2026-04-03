@@ -1,8 +1,10 @@
 import { createGameRow, DEFAULT_WIND_ORDER, isRowEmpty, normalizeWindOrder, SCORE_UNIT, type GameRow } from './sheet';
+import { DEFAULT_RULE, isDefaultRule, normalizeRule, type ScoringRule } from './settlement';
 
 export type AppState = {
   playerNames: [string, string, string, string];
   games: GameRow[];
+  rules: ScoringRule;
 };
 
 const STORAGE_KEY = 'mahjong-sheet-state';
@@ -109,6 +111,7 @@ export function normalizeState(raw: unknown): AppState | null {
   return {
     playerNames: playerNames ?? legacyPlayerNames ?? DEFAULT_PLAYER_NAMES,
     games,
+    rules: normalizeRule(raw.rules),
   };
 }
 
@@ -135,19 +138,31 @@ function serializeWindOrder(windOrder: GameRow['windOrder']) {
 }
 
 function serializeCompactState(state: AppState) {
+  const sections = [] as string[];
   const rows = trimTrailingEmptyGames(state.games)
     .map((game) => {
       const windSuffix = isDefaultWindOrder(game.windOrder) ? '' : `@${serializeWindOrder(game.windOrder)}`;
       return `${game.scores.join(',')}${windSuffix}`;
     })
     .join(';');
+  sections.push(rows);
 
-  if (isDefaultPlayerNames(state.playerNames)) {
-    return `${COMPACT_STATE_PREFIX}${rows}`;
+  if (!isDefaultPlayerNames(state.playerNames)) {
+    const encodedNames = state.playerNames.map((name) => encodeURIComponent(name)).join('~');
+    sections.push(`n:${encodedNames}`);
   }
 
-  const encodedNames = state.playerNames.map((name) => encodeURIComponent(name)).join('|');
-  return `${COMPACT_STATE_PREFIX}${rows}|${encodedNames}`;
+  if (!isDefaultRule(state.rules)) {
+    const compactRule = [
+      state.rules.startPoint,
+      state.rules.returnPoint,
+      state.rules.okaPoints / 1000,
+      ...state.rules.uma,
+    ].join(',');
+    sections.push(`r:${compactRule}`);
+  }
+
+  return `${COMPACT_STATE_PREFIX}${sections.join('|')}`;
 }
 
 function deserializeCompactState(value: string) {
@@ -157,7 +172,7 @@ function deserializeCompactState(value: string) {
 
   const payload = value.slice(COMPACT_STATE_PREFIX.length);
   const segments = payload.split('|');
-  const [rowsPart = '', ...nameParts] = segments;
+  const [rowsPart = '', ...optionParts] = segments;
 
   if (rowsPart === '') {
     return null;
@@ -199,20 +214,46 @@ function deserializeCompactState(value: string) {
   }
 
   let playerNames = DEFAULT_PLAYER_NAMES;
+  let rules = DEFAULT_RULE;
 
-  if (nameParts.length > 0) {
-    if (nameParts.length !== 4) {
-      return null;
-    }
-
+  if (optionParts.length === 4 && optionParts.every((part) => !part.startsWith('n:') && !part.startsWith('r:'))) {
     try {
-      playerNames = nameParts.map((name, index) => decodeURIComponent(name) || DEFAULT_PLAYER_NAMES[index]) as AppState['playerNames'];
+      playerNames = optionParts.map((name, index) => decodeURIComponent(name) || DEFAULT_PLAYER_NAMES[index]) as AppState['playerNames'];
+      return normalizeState({ playerNames, games, rules });
     } catch {
       return null;
     }
   }
 
-  return normalizeState({ playerNames, games });
+  for (const part of optionParts) {
+    if (part.startsWith('n:')) {
+      const nameParts = part.slice(2).split('~');
+
+      if (nameParts.length !== 4) {
+        return null;
+      }
+
+      try {
+        playerNames = nameParts.map((name, index) => decodeURIComponent(name) || DEFAULT_PLAYER_NAMES[index]) as AppState['playerNames'];
+      } catch {
+        return null;
+      }
+      continue;
+    }
+
+    if (part.startsWith('r:')) {
+      const [startPoint, returnPoint, okaValue, ...uma] = part.slice(2).split(',').map((entry) => Number(entry));
+
+      rules = normalizeRule({
+        startPoint,
+        returnPoint,
+        okaPoints: okaValue * 1000,
+        uma,
+      });
+    }
+  }
+
+  return normalizeState({ playerNames, games, rules });
 }
 
 function fromBase64Url(value: string) {

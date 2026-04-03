@@ -47,6 +47,20 @@ describe('calculateGameResults', () => {
     expect(results.reduce((sum, result) => sum + result.total, 0)).toBe(0);
     expect(results[0].total).toBe(75);
   });
+
+  it('applies custom oka and uma settings', () => {
+    const results = calculateGameResults(
+      [
+        { seat: 0, name: '東', score: 35700 },
+        { seat: 1, name: '南', score: 32400 },
+        { seat: 2, name: '西', score: 32200 },
+        { seat: 3, name: '北', score: 19700 },
+      ],
+      { startPoint: 30000, returnPoint: 30000, okaPoints: 0, uma: [20, 10, -10, -20] },
+    );
+
+    expect(results.map((result) => result.total)).toEqual([26, 12, -8, -30]);
+  });
 });
 
 describe('helpers', () => {

@@ -1,37 +1,46 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
-import { createGameRow, cycleWindOrderAtSeat, getTieBreakOrder, getWindLabel, resolveGameRow, SCORE_UNIT, TOTAL_POINTS, type GameRow } from './lib/sheet';
+import { createGameRow, cycleWindOrderAtSeat, getTieBreakOrder, getWindLabel, resolveGameRow, SCORE_UNIT, type GameRow } from './lib/sheet';
 import { buildShareUrl, loadSavedState, readSharedState, saveState, serializeState } from './lib/state';
-import { calculateGameResults, formatDelta } from './lib/settlement';
+import { calculateGameResults, DEFAULT_RULE, formatDelta, type ScoringRule } from './lib/settlement';
 
 function App() {
   const initialState = readSharedState() ?? loadSavedState() ?? defaultState;
   const [playerNames, setPlayerNames] = useState(initialState.playerNames);
   const [games, setGames] = useState<GameRow[]>(initialState.games);
+  const [rules, setRules] = useState<ScoringRule>(initialState.rules);
+  const expectedTotal = rules.startPoint * 4;
   const [copied, setCopied] = useState(false);
   const infoDetailsRef = useRef<HTMLDetailsElement | null>(null);
+  const settingsDetailsRef = useRef<HTMLDetailsElement | null>(null);
 
   useEffect(() => {
-    saveState({ playerNames, games });
-  }, [games, playerNames]);
+    saveState({ playerNames, games, rules });
+  }, [games, playerNames, rules]);
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
-      const infoDetails = infoDetailsRef.current;
-
-      if (!infoDetails?.open) {
+      if (!(event.target instanceof Node)) {
         return;
       }
 
-      if (event.target instanceof Node && !infoDetails.contains(event.target)) {
-        infoDetails.open = false;
+      for (const details of [infoDetailsRef.current, settingsDetailsRef.current]) {
+        if (details?.open && !details.contains(event.target)) {
+          details.open = false;
+        }
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && infoDetailsRef.current?.open) {
-        infoDetailsRef.current.open = false;
+      if (event.key === 'Escape') {
+        if (infoDetailsRef.current?.open) {
+          infoDetailsRef.current.open = false;
+        }
+
+        if (settingsDetailsRef.current?.open) {
+          settingsDetailsRef.current.open = false;
+        }
       }
     };
 
@@ -47,7 +56,7 @@ function App() {
   const evaluatedGames = useMemo(
     () =>
       games.map((row) => {
-        const resolution = resolveGameRow(row, TOTAL_POINTS);
+        const resolution = resolveGameRow(row, expectedTotal);
 
         if (resolution.kind !== 'complete') {
           return { row, resolution, results: null };
@@ -63,10 +72,11 @@ function App() {
               score,
               tieBreakOrder: getTieBreakOrder(row.windOrder, seat),
             })),
+            rules,
           ),
         };
       }),
-    [games, playerNames],
+    [expectedTotal, games, playerNames, rules],
   );
 
   const completeGames = evaluatedGames.filter((game) => game.results !== null);
@@ -81,14 +91,57 @@ function App() {
 
     return totals as [number, number, number, number];
   }, [completeGames]);
-  const shareUrl = useMemo(() => buildShareUrl(serializeState({ playerNames, games })), [games, playerNames]);
+  const shareUrl = useMemo(() => buildShareUrl(serializeState({ playerNames, games, rules })), [games, playerNames, rules]);
 
   const updatePlayerName = (seat: number, value: string) => {
     setPlayerNames((current) => current.map((name, index) => (index === seat ? value : name)) as typeof current);
   };
 
+  const updateRuleNumber = (key: 'startPoint' | 'returnPoint', value: string) => {
+    const nextValue = Number.parseInt(value, 10);
+
+    if (Number.isNaN(nextValue)) {
+      return;
+    }
+
+    setRules((current) => ({ ...current, [key]: nextValue }));
+  };
+
+  const updateOka = (value: string) => {
+    const nextValue = Number.parseInt(value, 10);
+
+    if (Number.isNaN(nextValue)) {
+      return;
+    }
+
+    setRules((current) => ({ ...current, okaPoints: nextValue * 1000 }));
+  };
+
+  const updateUma = (index: number, value: string) => {
+    const nextValue = Number.parseInt(value, 10);
+
+    if (Number.isNaN(nextValue)) {
+      return;
+    }
+
+    setRules((current) => {
+      const nextUma = [...current.uma] as ScoringRule['uma'];
+      nextUma[index] = nextValue;
+      return { ...current, uma: nextUma };
+    });
+  };
+
+  const resetRules = () => {
+    setRules({
+      startPoint: DEFAULT_RULE.startPoint,
+      returnPoint: DEFAULT_RULE.returnPoint,
+      okaPoints: DEFAULT_RULE.okaPoints,
+      uma: [...DEFAULT_RULE.uma],
+    });
+  };
+
   const updateGameScore = (rowId: string, seat: number, value: string) => {
-    if (!/^-?\d{0,3}$/.test(value)) {
+    if (!/^-?\d{0,4}$/.test(value)) {
       return;
     }
 
@@ -166,28 +219,61 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <h1>麻雀スコアシート</h1>
-        <details className="info-details" ref={infoDetailsRef}>
-          <summary className="info-button" aria-label="使い方とルール">info</summary>
-          <div className="info-popover">
-            <p className="info-label">入力</p>
-            <ul className="info-list">
-              <li>100 点単位で入力。右の 00 は固定表示。</li>
-              <li>符号込み 4 文字まで入力可能。例: 350, -100</li>
-              <li>1 つだけ空欄なら 4 人目を自動補完。</li>
-            </ul>
-            <p className="info-label">計算仕様</p>
-            <ul className="info-list">
-              <li>4 麻の雀魂式。</li>
-              <li>25000 持ち、30000 返し。</li>
-              <li>オカ 20、ウマ +15 / +5 / -5 / -15。</li>
-              <li>同点時は座順優先。必要なら - をクリックして各行の席順を指定。</li>
-            </ul>
-            <p className="info-label">保存</p>
-            <ul className="info-list">
-              <li>表の内容は URL と localStorage に保存。</li>
-            </ul>
-          </div>
-        </details>
+        <div className="topbar-actions">
+          <details className="setting-details" ref={settingsDetailsRef}>
+            <summary className="info-button" aria-label="計算設定">setting</summary>
+            <div className="setting-popover">
+              <div className="settings-grid">
+                <label className="settings-field">
+                  <span>持ち点</span>
+                  <input type="number" value={rules.startPoint} onChange={(event) => updateRuleNumber('startPoint', event.target.value)} />
+                </label>
+                <label className="settings-field">
+                  <span>返し点</span>
+                  <input type="number" value={rules.returnPoint} onChange={(event) => updateRuleNumber('returnPoint', event.target.value)} />
+                </label>
+                <label className="settings-field">
+                  <span>オカ</span>
+                  <input type="number" value={rules.okaPoints / 1000} onChange={(event) => updateOka(event.target.value)} />
+                </label>
+                <label className="settings-field settings-field-wide">
+                  <span>ウマ</span>
+                  <div className="uma-grid">
+                    {rules.uma.map((value, index) => (
+                      <input key={`uma-${index}`} type="number" value={value} onChange={(event) => updateUma(index, event.target.value)} />
+                    ))}
+                  </div>
+                </label>
+              </div>
+              <div className="settings-actions">
+                <button type="button" onClick={resetRules}>デフォルトに戻す</button>
+              </div>
+            </div>
+          </details>
+          <details className="info-details" ref={infoDetailsRef}>
+            <summary className="info-button" aria-label="使い方とルール">info</summary>
+            <div className="info-popover">
+              <p className="info-label">入力</p>
+              <ul className="info-list">
+                <li>100 点単位で入力。右の 00 は固定表示。</li>
+                <li>符号込み 5 文字まで入力可能。例: 350, -100, 1200</li>
+                <li>1 つだけ空欄なら 4 人目を自動補完。</li>
+              </ul>
+              <p className="info-label">現在の計算仕様</p>
+              <ul className="info-list">
+                <li>{rules.startPoint} 持ち、{rules.returnPoint} 返し。</li>
+                <li>オカ {rules.okaPoints / 1000}、ウマ {rules.uma.map((value) => `${value >= 0 ? '+' : ''}${value}`).join(' / ')}。</li>
+                <li>同点時は座順優先。必要なら - をクリックして各行の席順を指定。</li>
+              </ul>
+              <p className="info-label">参考</p>
+              <ul className="info-list info-links">
+                <li><a href="https://riichi.wiki/Mahjong_Soul#Rules" target="_blank" rel="noreferrer">riichi.wiki Mahjong Soul</a></li>
+                <li><a href="https://riichi.wiki/Oka_and_uma#Procedure" target="_blank" rel="noreferrer">riichi.wiki Oka and uma</a></li>
+                <li><a href="https://mahjong-item.jp/25000-30000/" target="_blank" rel="noreferrer">25000持ち30000返しの解説</a></li>
+              </ul>
+            </div>
+          </details>
+        </div>
       </header>
 
       <section className="table-panel">
@@ -254,7 +340,7 @@ function App() {
                               className="score-input"
                               type="text"
                               inputMode="text"
-                              maxLength={4}
+                              maxLength={5}
                               value={displayValue}
                               disabled={isAuto}
                               onChange={(event) => updateGameScore(game.row.id, seat, event.target.value)}

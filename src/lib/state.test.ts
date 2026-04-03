@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deserializeState, normalizeState, serializeState, type AppState } from './state';
+import { DEFAULT_RULE } from './settlement';
 
 function toLegacyBase64Url(value: string) {
   return btoa(unescape(encodeURIComponent(value)))
@@ -22,6 +23,7 @@ describe('normalizeState', () => {
     expect(state).toEqual({
       playerNames: ['A', 'B', 'C', 'D'],
       games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, 2, null, 1] }],
+      rules: DEFAULT_RULE,
     });
   });
 
@@ -40,6 +42,7 @@ describe('normalizeState', () => {
     expect(state?.games).toHaveLength(1);
     expect(state?.games[0]?.scores).toEqual(['350', '280', '220', '150']);
     expect(state?.games[0]?.windOrder).toEqual([null, null, null, null]);
+    expect(state?.rules).toEqual(DEFAULT_RULE);
   });
 
   it('falls back to defaults when names are missing but games are valid', () => {
@@ -51,6 +54,7 @@ describe('normalizeState', () => {
     expect(state?.games).toHaveLength(1);
     expect(state?.games[0]?.scores).toEqual(['350', '280', '220', '150']);
     expect(state?.games[0]?.windOrder).toEqual([0, 1, 2, 3]);
+    expect(state?.rules).toEqual(DEFAULT_RULE);
   });
 
   it('migrates legacy east-seat rows into full wind order', () => {
@@ -60,6 +64,17 @@ describe('normalizeState', () => {
     });
 
     expect(state?.games[0]?.windOrder).toEqual([2, 3, 0, 1]);
+    expect(state?.rules).toEqual(DEFAULT_RULE);
+  });
+
+  it('accepts a current rule shape', () => {
+    const state = normalizeState({
+      playerNames: ['A', 'B', 'C', 'D'],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
+      rules: { startPoint: 30000, returnPoint: 30000, okaPoints: 0, uma: [20, 10, -10, -20] },
+    });
+
+    expect(state?.rules).toEqual({ startPoint: 30000, returnPoint: 30000, okaPoints: 0, uma: [20, 10, -10, -20] });
   });
 
   it('returns null for unrelated malformed data', () => {
@@ -72,6 +87,7 @@ describe('share serialization', () => {
     const serialized = serializeState({
       playerNames: ['東', '南', '西', '北'],
       games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
+      rules: DEFAULT_RULE,
     });
 
     expect(serialized).toBe('v2|350,280,220,150');
@@ -84,6 +100,7 @@ describe('share serialization', () => {
         { id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [2, 3, 0, 1] },
         { id: 'g-2', scores: ['250', '250', '250', '250'], windOrder: [null, null, null, null] },
       ],
+      rules: DEFAULT_RULE,
     };
 
     expect(deserializeState(serializeState(state))).toEqual({
@@ -92,6 +109,7 @@ describe('share serialization', () => {
         { id: expect.any(String), scores: ['350', '280', '220', '150'], windOrder: [2, 3, 0, 1] },
         { id: expect.any(String), scores: ['250', '250', '250', '250'], windOrder: [null, null, null, null] },
       ],
+      rules: DEFAULT_RULE,
     });
   });
 
@@ -99,6 +117,7 @@ describe('share serialization', () => {
     const legacyState: AppState = {
       playerNames: ['東', '南', '西', '北'],
       games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
+      rules: DEFAULT_RULE,
     };
 
     expect(deserializeState(serializeLegacyState(legacyState))).toEqual(legacyState);
@@ -111,6 +130,7 @@ describe('share serialization', () => {
         { id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] },
         { id: 'g-2', scores: ['270', '260', '250', '220'], windOrder: [3, 0, 1, 2] },
       ],
+      rules: DEFAULT_RULE,
     };
 
     expect(serializeState(state).length).toBeLessThan(serializeLegacyState(state).length);
@@ -120,6 +140,7 @@ describe('share serialization', () => {
     const serialized = serializeState({
       playerNames: ['東', '南', '西', '北'],
       games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, 2, null, 1] }],
+      rules: DEFAULT_RULE,
     });
 
     expect(serialized).toBe('v2|350,280,220,150@-2-1');
@@ -129,6 +150,25 @@ describe('share serialization', () => {
     expect(deserializeState('v2|350,280,220,150@2')).toEqual({
       playerNames: ['東', '南', '西', '北'],
       games: [{ id: expect.any(String), scores: ['350', '280', '220', '150'], windOrder: [2, 3, 0, 1] }],
+      rules: DEFAULT_RULE,
+    });
+  });
+
+  it('serializes non-default rules compactly', () => {
+    const serialized = serializeState({
+      playerNames: ['東', '南', '西', '北'],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
+      rules: { startPoint: 30000, returnPoint: 30000, okaPoints: 0, uma: [20, 10, -10, -20] },
+    });
+
+    expect(serialized).toBe('v2|350,280,220,150|r:30000,30000,0,20,10,-10,-20');
+  });
+
+  it('keeps old compact links with unprefixed custom names readable', () => {
+    expect(deserializeState('v2|350,280,220,150|A|B|C|D')).toEqual({
+      playerNames: ['A', 'B', 'C', 'D'],
+      games: [{ id: expect.any(String), scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
+      rules: DEFAULT_RULE,
     });
   });
 });

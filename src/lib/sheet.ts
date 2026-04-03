@@ -91,7 +91,7 @@ export function cycleWindOrderAtSeat(
   return nextOrder;
 }
 
-function parseScore(value: string) {
+function parseScore(value: string, maxScoreUnits: number) {
   const trimmed = value.trim();
 
   if (trimmed === '' || trimmed === '-') {
@@ -99,7 +99,7 @@ function parseScore(value: string) {
   }
 
   const parsed = Number(trimmed);
-  return Number.isInteger(parsed) && parsed >= -TOTAL_SCORE_UNITS && parsed <= TOTAL_SCORE_UNITS ? parsed : Number.NaN;
+  return Number.isInteger(parsed) && parsed >= -maxScoreUnits && parsed <= maxScoreUnits ? parsed : Number.NaN;
 }
 
 export function isRowEmpty(row: GameRow) {
@@ -107,8 +107,9 @@ export function isRowEmpty(row: GameRow) {
 }
 
 export function resolveGameRow(row: GameRow, expectedTotal: number = TOTAL_POINTS): ResolvedGameRow {
-  const parsedScores = row.scores.map(parseScore);
   const expectedUnits = expectedTotal / SCORE_UNIT;
+  const maxScoreUnits = Math.max(TOTAL_SCORE_UNITS, expectedUnits);
+  const parsedScores = row.scores.map((score) => parseScore(score, maxScoreUnits));
   const filledCount = parsedScores.filter((score) => typeof score === 'number' && !Number.isNaN(score)).length;
 
   if (filledCount === 0) {
