@@ -1,6 +1,7 @@
 export type GameRow = {
   id: string;
   scores: [string, string, string, string];
+  eastSeat: number;
 };
 
 export type ResolvedGameRow =
@@ -13,12 +14,26 @@ export type ResolvedGameRow =
 export const SCORE_UNIT = 100;
 export const TOTAL_POINTS = 100000;
 export const TOTAL_SCORE_UNITS = TOTAL_POINTS / SCORE_UNIT;
+export const WIND_LABELS = ['東', '南', '西', '北'] as const;
 
 export function createGameRow(): GameRow {
   return {
     id: `g-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     scores: ['', '', '', ''],
+    eastSeat: 0,
   };
+}
+
+export function normalizeEastSeat(value: unknown) {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < 4 ? value : 0;
+}
+
+export function getWindLabel(eastSeat: number, seat: number) {
+  return WIND_LABELS[(seat - eastSeat + 4) % 4];
+}
+
+export function getTieBreakOrder(eastSeat: number, seat: number) {
+  return (seat - eastSeat + 4) % 4;
 }
 
 function parseScore(value: string) {

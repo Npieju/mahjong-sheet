@@ -25,6 +25,17 @@ describe('calculateGameResults', () => {
     expect(results.map((result) => result.rank)).toEqual([1, 2, 3, 4]);
   });
 
+  it('breaks ties by the provided per-game wind order', () => {
+    const results = calculateGameResults([
+      { seat: 0, name: 'A', score: 30000, tieBreakOrder: 1 },
+      { seat: 1, name: 'B', score: 30000, tieBreakOrder: 0 },
+      { seat: 2, name: 'C', score: 25000, tieBreakOrder: 2 },
+      { seat: 3, name: 'D', score: 15000, tieBreakOrder: 3 },
+    ]);
+
+    expect(results.map((result) => result.rank)).toEqual([2, 1, 3, 4]);
+  });
+
   it('corrects rounding drift back to zero-sum on the winner', () => {
     const results = calculateGameResults([
       { seat: 0, name: '東', score: 69500 },

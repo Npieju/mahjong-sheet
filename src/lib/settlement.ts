@@ -2,6 +2,7 @@ export type MahjongSoulPlayer = {
   seat: number;
   name: string;
   score: number;
+  tieBreakOrder?: number;
 };
 
 export type MahjongSoulRule = {
@@ -47,7 +48,7 @@ export function getPlacementOrder(players: MahjongSoulPlayer[]) {
       return right.score - left.score;
     }
 
-    return left.seat - right.seat;
+    return (left.tieBreakOrder ?? left.seat) - (right.tieBreakOrder ?? right.seat);
   });
 }
 
