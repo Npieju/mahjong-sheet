@@ -77,6 +77,16 @@ describe('normalizeState', () => {
     expect(state?.rules).toEqual({ startPoint: 30000, returnPoint: 30000, okaPoints: 0, uma: [20, 10, -10, -20] });
   });
 
+  it('migrates the old default rule to the current Mahjong Soul default', () => {
+    const state = normalizeState({
+      playerNames: ['A', 'B', 'C', 'D'],
+      games: [{ id: 'g-1', scores: ['449', '343', '229', '-21'], windOrder: [null, null, null, null] }],
+      rules: { startPoint: 25000, returnPoint: 30000, okaPoints: 20000, uma: [15, 5, -5, -15] },
+    });
+
+    expect(state?.rules).toEqual(DEFAULT_RULE);
+  });
+
   it('returns null for unrelated malformed data', () => {
     expect(normalizeState({ foo: 'bar' })).toBeNull();
   });

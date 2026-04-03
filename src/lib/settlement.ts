@@ -35,10 +35,24 @@ export const DEFAULT_RULE: ScoringRule = {
   okaPoints: 0,
 };
 
+const LEGACY_DEFAULT_RULE: ScoringRule = {
+  startPoint: 25000,
+  returnPoint: 30000,
+  uma: [15, 5, -5, -15],
+  okaPoints: 20000,
+};
+
 export const MAHJONG_SOUL_RULE = DEFAULT_RULE;
 
 function toInteger(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : null;
+}
+
+function rulesMatch(left: ScoringRule, right: ScoringRule) {
+  return left.startPoint === right.startPoint
+    && left.returnPoint === right.returnPoint
+    && left.okaPoints === right.okaPoints
+    && left.uma.every((value, index) => value === right.uma[index]);
 }
 
 export function normalizeRule(value: unknown): ScoringRule {
@@ -58,19 +72,18 @@ export function normalizeRule(value: unknown): ScoringRule {
     return DEFAULT_RULE;
   }
 
-  return {
+  const normalized = {
     startPoint,
     returnPoint,
     okaPoints,
     uma: uma as [number, number, number, number],
   };
+
+  return rulesMatch(normalized, LEGACY_DEFAULT_RULE) ? DEFAULT_RULE : normalized;
 }
 
 export function isDefaultRule(rule: ScoringRule) {
-  return rule.startPoint === DEFAULT_RULE.startPoint
-    && rule.returnPoint === DEFAULT_RULE.returnPoint
-    && rule.okaPoints === DEFAULT_RULE.okaPoints
-    && rule.uma.every((value, index) => value === DEFAULT_RULE.uma[index]);
+  return rulesMatch(rule, DEFAULT_RULE);
 }
 
 function roundToTenths(value: number) {
