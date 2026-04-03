@@ -114,7 +114,7 @@ function App() {
             <p>100点単位、符号込み4文字入力。右の 00 は固定。</p>
             <p>空欄を 1 つだけ残すと 4 人目を自動補完。</p>
             <p>雀魂式 4麻。25000持ち、30000返し、オカ20、ウマ +15 +5 -5 -15、同点は座順優先。</p>
-            <p>状態: 未=未入力、補=補完待ち、数=数値不正、差=合計不一致、自=自動補完。</p>
+            <p>行の状態は背景色とツールチップで確認。</p>
             <p>URL と localStorage に保存。</p>
             {games.every((row) => isRowEmpty(row)) ? <p>まず 1 行入れれば動く。</p> : null}
           </div>
@@ -130,7 +130,6 @@ function App() {
               <col className="col-score" />
               <col className="col-score" />
               <col className="col-score" />
-              <col className="col-status" />
               <col className="col-remove" />
             </colgroup>
             <thead>
@@ -146,7 +145,6 @@ function App() {
                     />
                   </th>
                 ))}
-                <th>状</th>
                 <th />
               </tr>
             </thead>
@@ -155,19 +153,23 @@ function App() {
                 const autoFilledSeat = game.resolution.kind === 'complete' ? game.resolution.autoFilledSeat : null;
                 const rowStatus =
                   game.resolution.kind === 'empty'
-                    ? { short: '未', long: '未入力' }
+                    ? '未入力'
                     : game.resolution.kind === 'partial'
-                      ? { short: '補', long: '3人入力で補完待ち' }
+                      ? '3人入力で補完待ち'
                       : game.resolution.kind === 'invalid'
-                        ? { short: '数', long: '数値不正' }
+                        ? '数値不正'
                         : game.resolution.kind === 'mismatch'
-                          ? { short: '差', long: `合計差 ${game.resolution.diff > 0 ? '+' : ''}${game.resolution.diff}` }
+                          ? `合計差 ${game.resolution.diff > 0 ? '+' : ''}${game.resolution.diff}`
                           : autoFilledSeat === null
-                            ? { short: 'OK', long: '計算可' }
-                            : { short: '自', long: '自動補完' };
+                            ? '計算可'
+                            : '自動補完';
 
                 return (
-                  <tr key={game.row.id} className={game.resolution.kind === 'mismatch' ? 'row-warn' : undefined}>
+                  <tr
+                    key={game.row.id}
+                    className={game.resolution.kind === 'mismatch' ? 'row-warn' : undefined}
+                    title={rowStatus}
+                  >
                     <th scope="row">{gameIndex + 1}</th>
                     {game.row.scores.map((score, seat) => {
                       const result = game.results?.find((entry) => entry.seat === seat) ?? null;
@@ -198,7 +200,6 @@ function App() {
                         </td>
                       );
                     })}
-                    <td className="status-cell" title={rowStatus.long}>{rowStatus.short}</td>
                     <td className="remove-cell">
                       <button type="button" className="ghost-button" onClick={() => removeGame(game.row.id)}>
                         ×
@@ -209,7 +210,7 @@ function App() {
               })}
               <tr className="add-row">
                 <th scope="row">{games.length + 1}</th>
-                <td colSpan={6}>
+                <td colSpan={5}>
                   <button type="button" className="inline-add-button" onClick={addGame}>行追加</button>
                 </td>
               </tr>
@@ -222,8 +223,7 @@ function App() {
                     <div className={`result-chip ${total >= 0 ? 'plus' : 'minus'}`}>{formatDelta(total)}</div>
                   </td>
                 ))}
-                <td className="status-cell">{completeGames.length}</td>
-                <td />
+                <td className="remove-cell total-count-cell">{completeGames.length}</td>
               </tr>
             </tfoot>
           </table>
