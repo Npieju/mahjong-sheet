@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeState } from './state';
+import { deserializeState, normalizeState, serializeState, type AppState } from './state';
+
+function toLegacyBase64Url(value: string) {
+  return btoa(unescape(encodeURIComponent(value)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function serializeLegacyState(state: AppState) {
+  return toLegacyBase64Url(JSON.stringify(state));
+}
 
 describe('normalizeState', () => {
   it('accepts the current app state shape', () => {
@@ -42,5 +53,55 @@ describe('normalizeState', () => {
 
   it('returns null for unrelated malformed data', () => {
     expect(normalizeState({ foo: 'bar' })).toBeNull();
+  });
+});
+
+describe('share serialization', () => {
+  it('uses a compact format for default names', () => {
+    const serialized = serializeState({
+      playerNames: ['東', '南', '西', '北'],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'] }],
+    });
+
+    expect(serialized).toBe('v2|350,280,220,150');
+  });
+
+  it('round-trips custom names and multiple rows', () => {
+    const state: AppState = {
+      playerNames: ['A', 'B', 'C', 'D'],
+      games: [
+        { id: 'g-1', scores: ['350', '280', '220', '150'] },
+        { id: 'g-2', scores: ['250', '250', '250', '250'] },
+      ],
+    };
+
+    expect(deserializeState(serializeState(state))).toEqual({
+      playerNames: ['A', 'B', 'C', 'D'],
+      games: [
+        { id: expect.any(String), scores: ['350', '280', '220', '150'] },
+        { id: expect.any(String), scores: ['250', '250', '250', '250'] },
+      ],
+    });
+  });
+
+  it('keeps old shared URLs readable', () => {
+    const legacyState: AppState = {
+      playerNames: ['東', '南', '西', '北'],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'] }],
+    };
+
+    expect(deserializeState(serializeLegacyState(legacyState))).toEqual(legacyState);
+  });
+
+  it('is shorter than the legacy base64 JSON format', () => {
+    const state: AppState = {
+      playerNames: ['東', '南', '西', '北'],
+      games: [
+        { id: 'g-1', scores: ['350', '280', '220', '150'] },
+        { id: 'g-2', scores: ['270', '260', '250', '220'] },
+      ],
+    };
+
+    expect(serializeState(state).length).toBeLessThan(serializeLegacyState(state).length);
   });
 });

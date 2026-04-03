@@ -1,4 +1,4 @@
-import { createGameRow, SCORE_UNIT, type GameRow } from './sheet';
+import { createGameRow, isRowEmpty, SCORE_UNIT, type GameRow } from './sheet';
 
 export type AppState = {
   playerNames: [string, string, string, string];
@@ -7,6 +7,7 @@ export type AppState = {
 
 const STORAGE_KEY = 'mahjong-sheet-state';
 const DEFAULT_PLAYER_NAMES: AppState['playerNames'] = ['東', '南', '西', '北'];
+const COMPACT_STATE_PREFIX = 'v2|';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -110,11 +111,77 @@ export function normalizeState(raw: unknown): AppState | null {
   };
 }
 
-function toBase64Url(value: string) {
-  return btoa(unescape(encodeURIComponent(value)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
+function isDefaultPlayerNames(playerNames: AppState['playerNames']) {
+  return playerNames.every((name, index) => name === DEFAULT_PLAYER_NAMES[index]);
+}
+
+function trimTrailingEmptyGames(games: GameRow[]) {
+  const trimmedGames = [...games];
+
+  while (trimmedGames.length > 1 && isRowEmpty(trimmedGames[trimmedGames.length - 1])) {
+    trimmedGames.pop();
+  }
+
+  return trimmedGames;
+}
+
+function serializeCompactState(state: AppState) {
+  const rows = trimTrailingEmptyGames(state.games)
+    .map((game) => game.scores.join(','))
+    .join(';');
+
+  if (isDefaultPlayerNames(state.playerNames)) {
+    return `${COMPACT_STATE_PREFIX}${rows}`;
+  }
+
+  const encodedNames = state.playerNames.map((name) => encodeURIComponent(name)).join('|');
+  return `${COMPACT_STATE_PREFIX}${rows}|${encodedNames}`;
+}
+
+function deserializeCompactState(value: string) {
+  if (!value.startsWith(COMPACT_STATE_PREFIX)) {
+    return null;
+  }
+
+  const payload = value.slice(COMPACT_STATE_PREFIX.length);
+  const segments = payload.split('|');
+  const [rowsPart = '', ...nameParts] = segments;
+
+  if (rowsPart === '') {
+    return null;
+  }
+
+  const games = rowsPart
+    .split(';')
+    .map((row) => row.split(','))
+    .map((scores) => {
+      if (scores.length !== 4) {
+        return null;
+      }
+
+      return { id: createGameRow().id, scores: scores as GameRow['scores'] } satisfies GameRow;
+    })
+    .filter((game): game is GameRow => game !== null);
+
+  if (games.length === 0) {
+    return null;
+  }
+
+  let playerNames = DEFAULT_PLAYER_NAMES;
+
+  if (nameParts.length > 0) {
+    if (nameParts.length !== 4) {
+      return null;
+    }
+
+    try {
+      playerNames = nameParts.map((name, index) => decodeURIComponent(name) || DEFAULT_PLAYER_NAMES[index]) as AppState['playerNames'];
+    } catch {
+      return null;
+    }
+  }
+
+  return normalizeState({ playerNames, games });
 }
 
 function fromBase64Url(value: string) {
@@ -125,10 +192,16 @@ function fromBase64Url(value: string) {
 }
 
 export function serializeState(state: AppState) {
-  return toBase64Url(JSON.stringify(state));
+  return serializeCompactState(state);
 }
 
 export function deserializeState(value: string) {
+  const compactState = deserializeCompactState(value);
+
+  if (compactState) {
+    return compactState;
+  }
+
   return normalizeState(JSON.parse(fromBase64Url(value)));
 }
 
