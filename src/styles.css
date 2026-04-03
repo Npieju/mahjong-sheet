@@ -52,7 +52,7 @@ textarea {
 .topbar p {
   margin: 0;
   color: #555;
-  font-size: 0.92rem;
+  font-size: 0.84rem;
 }
 
 .table-panel,
@@ -64,7 +64,7 @@ textarea {
 }
 
 .table-panel {
-  padding: 10px;
+  padding: 8px;
 }
 
 .toolbar,
@@ -87,9 +87,10 @@ textarea {
 
 .score-table {
   width: 100%;
-  min-width: 620px;
+  min-width: 0;
   border-collapse: collapse;
   table-layout: fixed;
+  font-size: 0.82rem;
 }
 
 .score-table th,
@@ -108,7 +109,13 @@ textarea {
 .score-table thead th:first-child,
 .score-table tbody th,
 .score-table tfoot th {
-  width: 44px;
+  width: 28px;
+}
+
+.score-table thead th:last-child,
+.score-table tbody td:last-child,
+.score-table tfoot td:last-child {
+  width: 28px;
 }
 
 .score-table tfoot th,
@@ -121,7 +128,7 @@ textarea {
   width: 100%;
   border: 1px solid #d8cfbf;
   border-radius: 8px;
-  padding: 8px 9px;
+  padding: 6px 6px;
   background: #fffdfa;
   color: #151515;
 }
@@ -134,26 +141,28 @@ textarea {
 .name-input {
   min-width: 0;
   font-weight: 700;
-  padding-inline: 8px;
+  padding-inline: 5px;
 }
 
 .score-input-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .score-input {
-  width: 5.4ch;
-  min-width: 5.4ch;
+  width: 4.6ch;
+  min-width: 4.6ch;
   text-align: right;
-  padding-inline: 6px;
+  padding-inline: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .score-suffix {
-  width: 2ch;
+  width: 1.7ch;
   color: #6f685c;
   font-variant-numeric: tabular-nums;
+  font-size: 0.9em;
 }
 
 .auto-cell {
@@ -166,10 +175,10 @@ textarea {
 
 .result-chip {
   display: inline-block;
-  margin-top: 4px;
-  padding: 1px 6px;
+  margin-top: 3px;
+  padding: 1px 4px;
   border-radius: 999px;
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-weight: 700;
 }
 
@@ -186,25 +195,27 @@ textarea {
 .status-cell {
   white-space: nowrap;
   color: #6a6458;
-  width: 84px;
-  font-size: 0.8rem;
+  width: 42px;
+  font-size: 0.72rem;
 }
 
 .remove-cell {
-  width: 54px;
+  width: 28px;
 }
 
 button {
   border: 1px solid #cfc3b3;
   border-radius: 999px;
-  padding: 7px 12px;
+  padding: 6px 10px;
   background: #fffdfa;
   color: #151515;
   cursor: pointer;
 }
 
 .ghost-button {
-  padding-inline: 8px;
+  min-width: 24px;
+  padding-inline: 0;
+  padding-block: 4px;
 }
 
 .notes-row {
@@ -228,7 +239,7 @@ button {
   padding: 10px 12px;
   color: #555;
   flex-wrap: wrap;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
 }
 
 .empty-hint {
@@ -249,20 +260,52 @@ button {
 
 @media (max-width: 640px) {
   .app-shell {
-    padding: 12px 6px 28px;
+    padding: 8px 2px 20px;
+  }
+
+  .topbar h1 {
+    font-size: 1.25rem;
+  }
+
+  .topbar p {
+    font-size: 0.74rem;
   }
 
   .table-panel {
-    padding: 6px;
+    padding: 4px;
+  }
+
+  .score-table {
+    font-size: 0.72rem;
   }
 
   .score-table th,
   .score-table td {
-    padding: 4px 2px;
+    padding: 3px 1px;
+  }
+
+  .score-table input {
+    padding: 5px 3px;
   }
 
   .score-input {
-    width: 5ch;
-    min-width: 5ch;
+    width: 4.1ch;
+    min-width: 4.1ch;
+    font-size: 0.92em;
+  }
+
+  .score-suffix {
+    width: 1.55ch;
+    font-size: 0.82em;
+  }
+
+  .status-cell {
+    width: 32px;
+    font-size: 0.64rem;
+  }
+
+  .notes-row,
+  .rule-panel {
+    font-size: 0.7rem;
   }
 }

@@ -108,7 +108,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <h1>麻雀スコアシート</h1>
-        <p>100点単位 / 符号付き3桁入力</p>
+        <p>100点単位 / 符号込み4文字</p>
       </header>
 
       <section className="table-panel">
@@ -122,7 +122,7 @@ function App() {
           <table className="score-table">
             <thead>
               <tr>
-                <th>Game</th>
+                <th>#</th>
                 {playerNames.map((name, seat) => (
                   <th key={`name-${seat}`}>
                     <input
@@ -133,7 +133,7 @@ function App() {
                     />
                   </th>
                 ))}
-                <th>状態</th>
+                <th>状</th>
                 <th />
               </tr>
             </thead>
@@ -142,16 +142,16 @@ function App() {
                 const autoFilledSeat = game.resolution.kind === 'complete' ? game.resolution.autoFilledSeat : null;
                 const rowStatus =
                   game.resolution.kind === 'empty'
-                    ? '未入力'
+                    ? '未'
                     : game.resolution.kind === 'partial'
-                      ? '3人入力で補完'
+                      ? '補'
                       : game.resolution.kind === 'invalid'
-                        ? '数値のみ'
+                        ? '数'
                         : game.resolution.kind === 'mismatch'
                           ? `合計 ${game.resolution.diff > 0 ? '+' : ''}${game.resolution.diff}`
                           : autoFilledSeat === null
                             ? 'OK'
-                            : '自動補完';
+                            : '自';
 
                 return (
                   <tr key={game.row.id} className={game.resolution.kind === 'mismatch' ? 'row-warn' : undefined}>
@@ -170,6 +170,7 @@ function App() {
                               className="score-input"
                               type="text"
                               inputMode="text"
+                              maxLength={4}
                               value={displayValue}
                               disabled={isAuto}
                               onChange={(event) => updateGameScore(game.row.id, seat, event.target.value)}
@@ -187,7 +188,7 @@ function App() {
                     <td className="status-cell">{rowStatus}</td>
                     <td className="remove-cell">
                       <button type="button" className="ghost-button" onClick={() => removeGame(game.row.id)}>
-                        削除
+                        ×
                       </button>
                     </td>
                   </tr>
@@ -210,7 +211,7 @@ function App() {
         </div>
 
         <div className="notes-row">
-          <span>符号付き3桁で入力、右の 00 は固定です。</span>
+          <span>符号込み4文字、右の 00 は固定です。</span>
           <span>空欄を 1 つだけ残すと 4 人目を自動補完します。</span>
           <span>URL と localStorage に保存します。</span>
         </div>
