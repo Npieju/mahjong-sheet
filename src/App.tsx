@@ -481,11 +481,14 @@ function App() {
           </table>
         </div>
 
-        <div className="share-actions">
+        <div className="share-meta-row">
           <div className="share-meta" title={shareUrl}>
             <span className="share-label">共有用URL</span>
             <span className="share-preview">{shareUrlPreview}</span>
           </div>
+        </div>
+
+        <div className="bottom-actions">
           <button type="button" onClick={copyShareUrl}>{copied ? 'URLコピー済み' : 'URLコピー'}</button>
           <button type="button" onClick={downloadCsv}>CSV</button>
           <button type="button" onClick={downloadImage}>{exportingImage ? '画像出力中' : '画像出力'}</button>
