@@ -233,6 +233,21 @@ textarea {
   overflow-x: auto;
 }
 
+.table-wrap.exporting-image {
+  overflow: visible;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.table-wrap.exporting-image .col-remove {
+  width: 0;
+}
+
+.table-wrap.exporting-image .action-header,
+.table-wrap.exporting-image .remove-cell {
+  display: none;
+}
+
 .score-table {
   width: 100%;
   min-width: 0;

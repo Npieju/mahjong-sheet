@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { toPng } from 'html-to-image';
 import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
 import { createGameRow, cycleWindOrderAtSeat, getTieBreakOrder, getWindLabel, resolveGameRow, SCORE_UNIT, type GameRow } from './lib/sheet';
@@ -12,8 +13,10 @@ function App() {
   const [rules, setRules] = useState<ScoringRule>(initialState.rules);
   const expectedTotal = rules.startPoint * 4;
   const [copied, setCopied] = useState(false);
+  const [exportingImage, setExportingImage] = useState(false);
   const infoDetailsRef = useRef<HTMLDetailsElement | null>(null);
   const settingsDetailsRef = useRef<HTMLDetailsElement | null>(null);
+  const tableWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     saveState({ playerNames, games, rules });
@@ -215,6 +218,31 @@ function App() {
     window.setTimeout(() => setCopied(false), 1200);
   };
 
+  const downloadImage = async () => {
+    const node = tableWrapRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    setExportingImage(true);
+
+    try {
+      await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+      const dataUrl = await toPng(node, {
+        backgroundColor: '#ffffff',
+        pixelRatio: 2,
+        cacheBust: true,
+      });
+      const anchor = document.createElement('a');
+      anchor.href = dataUrl;
+      anchor.download = 'mahjong-sheet.png';
+      anchor.click();
+    } finally {
+      setExportingImage(false);
+    }
+  };
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -301,7 +329,7 @@ function App() {
       </header>
 
       <section className="table-panel">
-        <div className="table-wrap">
+        <div ref={tableWrapRef} className={`table-wrap ${exportingImage ? 'exporting-image' : ''}`}>
           <table className="score-table">
             <colgroup>
               <col className="col-index" />
@@ -324,7 +352,7 @@ function App() {
                     />
                   </th>
                 ))}
-                <th />
+                <th className="action-header" />
               </tr>
             </thead>
             <tbody>
@@ -435,8 +463,9 @@ function App() {
         <input className="share-input" type="text" readOnly value={shareUrl} />
 
         <div className="bottom-actions">
-          <button type="button" onClick={downloadCsv}>CSV</button>
           <button type="button" onClick={copyShareUrl}>{copied ? 'URLコピー済み' : 'URLコピー'}</button>
+          <button type="button" onClick={downloadCsv}>CSV</button>
+          <button type="button" onClick={downloadImage}>{exportingImage ? '画像出力中' : '画像出力'}</button>
         </div>
       </section>
     </main>
