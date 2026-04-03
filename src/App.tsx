@@ -399,6 +399,7 @@ function App() {
                     {game.row.scores.map((score, seat) => {
                       const result = game.results?.find((entry) => entry.seat === seat) ?? null;
                       const isAuto = autoFilledSeat === seat;
+                      const windLabel = getWindLabel(game.row.windOrder, seat);
                       const displayValue = isAuto && game.resolution.kind === 'complete'
                         ? String(game.resolution.scores[seat] / SCORE_UNIT)
                         : score;
@@ -425,15 +426,17 @@ function App() {
                             ) : (
                               <div className="result-chip-placeholder" />
                             )}
-                            <button
-                              type="button"
-                              className={`wind-button ${game.row.windOrder[seat] !== null ? 'active' : ''}`}
-                              onClick={() => cycleWindOrder(game.row.id, seat)}
-                              title={`${playerNames[seat]} の風を切り替える`}
-                              aria-label={`この行の ${playerNames[seat]} の風を切り替える`}
-                            >
-                              {getWindLabel(game.row.windOrder, seat)}
-                            </button>
+                            {exportingImage && windLabel === '-' ? null : (
+                              <button
+                                type="button"
+                                className={`wind-button ${game.row.windOrder[seat] !== null ? 'active' : ''}`}
+                                onClick={() => cycleWindOrder(game.row.id, seat)}
+                                title={`${playerNames[seat]} の風を切り替える`}
+                                aria-label={`この行の ${playerNames[seat]} の風を切り替える`}
+                              >
+                                {windLabel}
+                              </button>
+                            )}
                           </div>
                         </td>
                       );

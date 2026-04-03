@@ -281,11 +281,18 @@ textarea {
   background: transparent;
 }
 
+.table-wrap.exporting-image .score-table input,
 .table-wrap.exporting-image .score-table input:disabled {
   color: #151515;
-  background: #ffffff;
-  border-color: #d7d7d7;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
   opacity: 1;
+}
+
+.table-wrap.exporting-image .name-input,
+.table-wrap.exporting-image .score-input {
+  padding-inline: 0;
 }
 
 .score-table {
