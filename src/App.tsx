@@ -95,6 +95,7 @@ function App() {
     return totals as [number, number, number, number];
   }, [completeGames]);
   const shareUrl = useMemo(() => buildShareUrl(serializeState({ playerNames, games, rules })), [games, playerNames, rules]);
+  const shareUrlPreview = useMemo(() => (shareUrl.length <= 10 ? shareUrl : `${shareUrl.slice(0, 10)}...`), [shareUrl]);
 
   const updatePlayerName = (seat: number, value: string) => {
     setPlayerNames((current) => current.map((name, index) => (index === seat ? value : name)) as typeof current);
@@ -477,12 +478,11 @@ function App() {
           </table>
         </div>
 
-        <div className="share-section">
-          <p className="share-label">共有用URL</p>
-          <input className="share-input" type="text" readOnly value={shareUrl} />
-        </div>
-
-        <div className="bottom-actions">
+        <div className="share-actions">
+          <div className="share-meta" title={shareUrl}>
+            <span className="share-label">共有用URL</span>
+            <span className="share-preview">{shareUrlPreview}</span>
+          </div>
           <button type="button" onClick={copyShareUrl}>{copied ? 'URLコピー済み' : 'URLコピー'}</button>
           <button type="button" onClick={downloadCsv}>CSV</button>
           <button type="button" onClick={downloadImage}>{exportingImage ? '画像出力中' : '画像出力'}</button>
