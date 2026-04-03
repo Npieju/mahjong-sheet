@@ -307,9 +307,10 @@ textarea {
 
 .row-actions {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .total-count-cell {
@@ -405,7 +406,7 @@ button {
   }
 
   .row-actions {
-    gap: 2px;
+    gap: 1px;
   }
 
   .info-button {
