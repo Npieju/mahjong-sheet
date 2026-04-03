@@ -140,11 +140,12 @@ function App() {
         <details className="info-details" ref={infoDetailsRef}>
           <summary className="info-button" aria-label="使い方とルール">info</summary>
           <div className="info-popover">
-            <p>100点単位、符号込み4文字入力。右の 00 は固定。</p>
-            <p>空欄を 1 つだけ残すと 4 人目を自動補完。</p>
-            <p>雀魂式 4麻。25000持ち、30000返し、オカ20、ウマ +15 +5 -5 -15、同点は座順優先。</p>
-            <p>行の状態は背景色とツールチップで確認。</p>
-            <p>URL と localStorage に保存。</p>
+            <p>入力は 100 点単位です。右の 00 は固定表示です。</p>
+            <p>符号込み 4 文字まで入力できます。例: 350, -100</p>
+            <p>1 つだけ空欄なら、4 人目の点数を自動補完します。</p>
+            <p>雀魂式 4 麻です。25000 持ち、30000 返し、オカ 20、ウマ +15 +5 -5 -15、同点は座順優先です。</p>
+            <p>行の状態は背景色とツールチップで確認できます。</p>
+            <p>URL と localStorage に保存されます。外側を触るか Esc で閉じます。</p>
             {games.every((row) => isRowEmpty(row)) ? <p>まず 1 行入れれば動く。</p> : null}
           </div>
         </details>

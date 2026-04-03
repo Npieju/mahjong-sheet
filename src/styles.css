@@ -62,8 +62,8 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
-  height: 28px;
+  min-width: 58px;
+  height: 34px;
   border: 1px solid #d0d0d0;
   border-radius: 0;
   background: #ffffff;
@@ -71,8 +71,8 @@ textarea {
   cursor: pointer;
   list-style: none;
   user-select: none;
-  padding: 0 10px;
-  font-size: 0.74rem;
+  padding: 0 12px;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -85,14 +85,15 @@ textarea {
   top: calc(100% + 8px);
   right: 0;
   z-index: 2;
-  width: min(300px, calc(100vw - 24px));
-  padding: 10px 12px;
+  width: min(400px, calc(100vw - 24px));
+  padding: 14px 16px;
   border: 1px solid #d8d8d8;
   border-radius: 0;
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 10px 30px rgba(20, 20, 20, 0.1);
-  font-size: 0.75rem;
-  color: #555;
+  font-size: 0.94rem;
+  line-height: 1.65;
+  color: #333;
 }
 
 .info-popover p {
@@ -100,7 +101,7 @@ textarea {
 }
 
 .info-popover p + p {
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .table-panel {
@@ -197,14 +198,15 @@ textarea {
 .score-input-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
+  white-space: nowrap;
 }
 
 .score-input {
-  width: 4.6ch;
-  min-width: 4.6ch;
+  width: 4.15ch;
+  min-width: 4.15ch;
   text-align: right;
-  padding-inline: 4px;
+  padding-inline: 2px;
   font-variant-numeric: tabular-nums;
   font-size: 1.28rem;
   font-weight: 400;
@@ -212,7 +214,8 @@ textarea {
 }
 
 .score-suffix {
-  width: 1.7ch;
+  width: 1.95ch;
+  flex: 0 0 auto;
   color: #6a6a6a;
   font-variant-numeric: tabular-nums;
   font-size: 1.16rem;
@@ -321,13 +324,13 @@ button {
   }
 
   .score-input {
-    width: 4.1ch;
-    min-width: 4.1ch;
+    width: 3.85ch;
+    min-width: 3.85ch;
     font-size: 1.14rem;
   }
 
   .score-suffix {
-    width: 1.55ch;
+    width: 1.8ch;
     font-size: 1rem;
   }
 
@@ -336,10 +339,10 @@ button {
   }
 
   .info-button {
-    min-width: 42px;
-    height: 24px;
-    font-size: 0.68rem;
-    padding-inline: 8px;
+    min-width: 52px;
+    height: 30px;
+    font-size: 0.82rem;
+    padding-inline: 10px;
   }
 
   .info-popover {
@@ -350,6 +353,7 @@ button {
     width: auto;
     max-height: calc(100vh - 54px);
     overflow-y: auto;
-    font-size: 0.68rem;
+    padding: 12px 14px;
+    font-size: 0.82rem;
   }
 }
