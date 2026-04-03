@@ -291,6 +291,10 @@ function App() {
                 <li><a href="https://riichi.wiki/Oka_and_uma#Procedure" target="_blank" rel="noreferrer">riichi.wiki Oka and uma</a></li>
                 <li><a href="https://mahjong-item.jp/25000-30000/" target="_blank" rel="noreferrer">25000持ち30000返しの解説</a></li>
               </ul>
+              <p className="info-label">共有</p>
+              <ul className="info-list">
+                <li>下の URL 欄をコピーすると、現在の入力内容と設定を共有可能。</li>
+              </ul>
             </div>
           </details>
         </div>
