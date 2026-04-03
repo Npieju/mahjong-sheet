@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
 import { createGameRow, isRowEmpty, resolveGameRow, SCORE_UNIT, TOTAL_POINTS, type GameRow } from './lib/sheet';
@@ -10,10 +10,39 @@ function App() {
   const [playerNames, setPlayerNames] = useState(initialState.playerNames);
   const [games, setGames] = useState<GameRow[]>(initialState.games);
   const [copied, setCopied] = useState(false);
+  const infoDetailsRef = useRef<HTMLDetailsElement | null>(null);
 
   useEffect(() => {
     saveState({ playerNames, games });
   }, [games, playerNames]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      const infoDetails = infoDetailsRef.current;
+
+      if (!infoDetails?.open) {
+        return;
+      }
+
+      if (event.target instanceof Node && !infoDetails.contains(event.target)) {
+        infoDetails.open = false;
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && infoDetailsRef.current?.open) {
+        infoDetailsRef.current.open = false;
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const evaluatedGames = useMemo(
     () =>
@@ -108,7 +137,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <h1>麻雀スコアシート</h1>
-        <details className="info-details">
+        <details className="info-details" ref={infoDetailsRef}>
           <summary className="info-button" aria-label="使い方とルール">info</summary>
           <div className="info-popover">
             <p>100点単位、符号込み4文字入力。右の 00 は固定。</p>
