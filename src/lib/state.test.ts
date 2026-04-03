@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deserializeState, normalizeState, serializeState, type AppState } from './state';
-import { DEFAULT_RULE } from './settlement';
+import { DEFAULT_RULE, TRADITIONAL_RULE } from './settlement';
 
 function toLegacyBase64Url(value: string) {
   return btoa(unescape(encodeURIComponent(value)))
@@ -71,20 +71,20 @@ describe('normalizeState', () => {
     const state = normalizeState({
       playerNames: ['A', 'B', 'C', 'D'],
       games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
-      rules: { startPoint: 30000, uma: [20, 10, -10, -20] },
+      rules: { mode: 'mahjongSoul', startPoint: 30000, uma: [20, 10, -10, -20] },
     });
 
-    expect(state?.rules).toEqual({ startPoint: 30000, uma: [20, 10, -10, -20] });
+    expect(state?.rules).toEqual({ mode: 'mahjongSoul', startPoint: 30000, uma: [20, 10, -10, -20] });
   });
 
-  it('reads legacy rule data and keeps the Mahjong Soul-compatible parts', () => {
+  it('reads legacy rule data as traditional oka/uma settings', () => {
     const state = normalizeState({
       playerNames: ['A', 'B', 'C', 'D'],
       games: [{ id: 'g-1', scores: ['449', '343', '229', '-21'], windOrder: [null, null, null, null] }],
       rules: { startPoint: 25000, returnPoint: 30000, okaPoints: 20000, uma: [15, 5, -5, -15] },
     });
 
-    expect(state?.rules).toEqual(DEFAULT_RULE);
+    expect(state?.rules).toEqual(TRADITIONAL_RULE);
   });
 
   it('returns null for unrelated malformed data', () => {
@@ -168,18 +168,28 @@ describe('share serialization', () => {
     const serialized = serializeState({
       playerNames: ['東', '南', '西', '北'],
       games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
-      rules: { startPoint: 30000, uma: [20, 10, -10, -20] },
+      rules: { mode: 'mahjongSoul', startPoint: 30000, uma: [20, 10, -10, -20] },
     });
 
-    expect(serialized).toBe('v2|350,280,220,150|r:30000,20,10,-10,-20');
+    expect(serialized).toBe('v2|350,280,220,150|r:m,30000,20,10,-10,-20');
   });
 
   it('keeps old compact links with return-point and oka readable', () => {
     expect(deserializeState('v2|350,280,220,150|r:25000,30000,20,15,5,-5,-15')).toEqual({
       playerNames: ['東', '南', '西', '北'],
       games: [{ id: expect.any(String), scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
-      rules: DEFAULT_RULE,
+      rules: TRADITIONAL_RULE,
     });
+  });
+
+  it('serializes the traditional preset with an explicit mode tag', () => {
+    const serialized = serializeState({
+      playerNames: ['東', '南', '西', '北'],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
+      rules: TRADITIONAL_RULE,
+    });
+
+    expect(serialized).toBe('v2|350,280,220,150|r:t,25000,30000,15,5,-5,-15');
   });
 
   it('keeps old compact links with unprefixed custom names readable', () => {

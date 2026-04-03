@@ -153,7 +153,10 @@ function serializeCompactState(state: AppState) {
   }
 
   if (!isDefaultRule(state.rules)) {
-    const compactRule = [state.rules.startPoint, ...state.rules.uma].join(',');
+    const compactRule =
+      state.rules.mode === 'traditional'
+        ? ['t', state.rules.startPoint, state.rules.returnPoint, ...state.rules.uma].join(',')
+        : ['m', state.rules.startPoint, ...state.rules.uma].join(',');
     sections.push(`r:${compactRule}`);
   }
 
@@ -209,7 +212,7 @@ function deserializeCompactState(value: string) {
   }
 
   let playerNames = DEFAULT_PLAYER_NAMES;
-  let rules = DEFAULT_RULE;
+  let rules: ScoringRule = DEFAULT_RULE;
 
   if (optionParts.length === 4 && optionParts.every((part) => !part.startsWith('n:') && !part.startsWith('r:'))) {
     try {
@@ -237,11 +240,25 @@ function deserializeCompactState(value: string) {
     }
 
     if (part.startsWith('r:')) {
-      const values = part.slice(2).split(',').map((entry) => Number(entry));
+      const payload = part.slice(2);
+
+      if (payload.startsWith('m,')) {
+        const [startPoint, ...uma] = payload.slice(2).split(',').map((entry) => Number(entry));
+        rules = normalizeRule({ mode: 'mahjongSoul', startPoint, uma });
+        continue;
+      }
+
+      if (payload.startsWith('t,')) {
+        const [startPoint, returnPoint, ...uma] = payload.slice(2).split(',').map((entry) => Number(entry));
+        rules = normalizeRule({ mode: 'traditional', startPoint, returnPoint, uma });
+        continue;
+      }
+
+      const values = payload.split(',').map((entry) => Number(entry));
 
       if (values.length === 5) {
         const [startPoint, ...uma] = values;
-        rules = normalizeRule({ startPoint, uma });
+        rules = normalizeRule({ mode: 'mahjongSoul', startPoint, uma });
         continue;
       }
 

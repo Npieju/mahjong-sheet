@@ -4,7 +4,7 @@ import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
 import { createGameRow, cycleWindOrderAtSeat, getTieBreakOrder, getWindLabel, resolveGameRow, SCORE_UNIT, type GameRow } from './lib/sheet';
 import { buildShareUrl, loadSavedState, readSharedState, saveState, serializeState } from './lib/state';
-import { calculateGameResults, DEFAULT_RULE, formatDelta, type ScoringRule } from './lib/settlement';
+import { calculateGameResults, DEFAULT_RULE, formatDelta, getOkaPoints, TRADITIONAL_RULE, type ScoringRule } from './lib/settlement';
 
 function App() {
   const initialState = readSharedState() ?? loadSavedState() ?? defaultState;
@@ -96,19 +96,30 @@ function App() {
   }, [completeGames]);
   const shareUrl = useMemo(() => buildShareUrl(serializeState({ playerNames, games, rules })), [games, playerNames, rules]);
   const shareUrlPreview = useMemo(() => (shareUrl.length <= 10 ? shareUrl : `${shareUrl.slice(0, 10)}...`), [shareUrl]);
+  const derivedOka = useMemo(() => getOkaPoints(rules), [rules]);
 
   const updatePlayerName = (seat: number, value: string) => {
     setPlayerNames((current) => current.map((name, index) => (index === seat ? value : name)) as typeof current);
   };
 
-  const updateRulePointUnits = (key: 'startPoint', value: string) => {
+  const updateRulePointUnits = (key: 'startPoint' | 'returnPoint', value: string) => {
     if (!/^\d{0,4}$/.test(value)) {
       return;
     }
 
     const nextValue = value === '' ? 0 : Number.parseInt(value, 10) * SCORE_UNIT;
 
-    setRules((current) => ({ ...current, [key]: nextValue }));
+    setRules((current) => {
+      if (key === 'returnPoint') {
+        if (current.mode !== 'traditional') {
+          return current;
+        }
+
+        return { ...current, returnPoint: nextValue };
+      }
+
+      return { ...current, startPoint: nextValue };
+    });
   };
 
   const updateUma = (index: number, value: string) => {
@@ -126,10 +137,16 @@ function App() {
   };
 
   const resetRules = () => {
-    setRules({
-      startPoint: DEFAULT_RULE.startPoint,
-      uma: [...DEFAULT_RULE.uma],
-    });
+    setRules({ ...DEFAULT_RULE, uma: [...DEFAULT_RULE.uma] });
+  };
+
+  const applyPreset = (preset: 'mahjongSoul' | 'traditional') => {
+    if (preset === 'traditional') {
+      setRules({ ...TRADITIONAL_RULE, uma: [...TRADITIONAL_RULE.uma] });
+      return;
+    }
+
+    resetRules();
   };
 
   const updateGameScore = (rowId: string, seat: number, value: string) => {
@@ -272,6 +289,30 @@ function App() {
                     <span className="settings-point-suffix">00</span>
                   </div>
                 </label>
+                {rules.mode === 'traditional' ? (
+                  <>
+                    <label className="settings-field">
+                      <span>返し点</span>
+                      <div className="settings-point-wrap">
+                        <input
+                          className="settings-point-input"
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={4}
+                          value={String(rules.returnPoint / SCORE_UNIT)}
+                          onChange={(event) => updateRulePointUnits('returnPoint', event.target.value)}
+                        />
+                        <span className="settings-point-suffix">00</span>
+                      </div>
+                    </label>
+                    <label className="settings-field">
+                      <span>オカ</span>
+                      <div className="settings-point-wrap">
+                        <input className="settings-point-input" type="text" readOnly value={String(derivedOka / 1000)} />
+                      </div>
+                    </label>
+                  </>
+                ) : null}
                 <label className="settings-field settings-field-wide">
                   <span>順位点</span>
                   <div className="uma-grid">
@@ -282,7 +323,20 @@ function App() {
                 </label>
               </div>
               <div className="settings-actions">
-                <button type="button" onClick={resetRules}>デフォルトに戻す</button>
+                <button
+                  type="button"
+                  className={`preset-button ${rules.mode === 'mahjongSoul' ? 'active' : ''}`}
+                  onClick={() => applyPreset('mahjongSoul')}
+                >
+                  じゃんたまモード
+                </button>
+                <button
+                  type="button"
+                  className={`preset-button ${rules.mode === 'traditional' ? 'active' : ''}`}
+                  onClick={() => applyPreset('traditional')}
+                >
+                  返しオカあり
+                </button>
               </div>
             </div>
           </details>
@@ -297,7 +351,11 @@ function App() {
               </ul>
               <p className="info-label">現在の計算仕様</p>
               <ul className="info-list">
-                <li>雀魂表示に合わせて、({rules.startPoint} を基準にした素点差) + ウマで計算。</li>
+                <li>
+                  {rules.mode === 'traditional'
+                    ? `${rules.startPoint} 持ち ${rules.returnPoint} 返し。オカ ${derivedOka / 1000} をトップへ加算。`
+                    : `じゃんたまモード: (${rules.startPoint} を基準にした素点差) + 順位点。`}
+                </li>
                 <li>ウマ {rules.uma.map((value) => `${value >= 0 ? '+' : ''}${value}`).join(' / ')}。</li>
                 <li>同点時は座順優先。必要なら - をクリックして各行の席順を指定。</li>
               </ul>
@@ -309,7 +367,7 @@ function App() {
               </ul>
               <p className="info-label">共有</p>
               <ul className="info-list">
-                <li>下の URL 欄をコピーすると、現在の入力内容と設定を共有可能。</li>
+                <li>下の共有用URLをコピーすると、現在の入力内容と設定を共有可能。</li>
               </ul>
             </div>
           </details>

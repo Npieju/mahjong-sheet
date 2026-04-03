@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateGameResults, formatDelta, getStandings } from './settlement';
+import { calculateGameResults, formatDelta, getStandings, TRADITIONAL_RULE } from './settlement';
 
 describe('calculateGameResults', () => {
   it('matches Mahjong Soul style end-score display for a real result', () => {
@@ -48,7 +48,7 @@ describe('calculateGameResults', () => {
     expect(results[0].total).toBe(59.5);
   });
 
-  it('applies custom oka and uma settings', () => {
+  it('applies custom Mahjong Soul style settings', () => {
     const results = calculateGameResults(
       [
         { seat: 0, name: '東', score: 35700 },
@@ -56,18 +56,32 @@ describe('calculateGameResults', () => {
         { seat: 2, name: '西', score: 32200 },
         { seat: 3, name: '北', score: 19700 },
       ],
-      { startPoint: 30000, uma: [20, 10, -10, -20] },
+      { mode: 'mahjongSoul', startPoint: 30000, uma: [20, 10, -10, -20] },
     );
 
     expect(results.map((result) => result.total)).toEqual([25.7, 12.4, -7.8, -30.3]);
   });
+
+  it('supports the traditional return-point plus oka preset', () => {
+    const results = calculateGameResults(
+      [
+        { seat: 0, name: '東', score: 35700 },
+        { seat: 1, name: '南', score: 32400 },
+        { seat: 2, name: '西', score: 22200 },
+        { seat: 3, name: '北', score: 9700 },
+      ],
+      TRADITIONAL_RULE,
+    );
+
+    expect(results.map((result) => result.total)).toEqual([41, 7, -13, -35]);
+  });
 });
 
 describe('helpers', () => {
-  it('formats deltas with one decimal place', () => {
+  it('formats decimals and integers naturally', () => {
     expect(formatDelta(34.9)).toBe('+34.9');
     expect(formatDelta(-42.1)).toBe('-42.1');
-    expect(formatDelta(10)).toBe('+10.0');
+    expect(formatDelta(10)).toBe('+10');
   });
 
   it('builds standings with seat-order tie-break', () => {

@@ -210,7 +210,14 @@ textarea {
 .settings-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 12px;
+}
+
+.preset-button.active {
+  border-color: #8f8f8f;
+  background: #f2f2f2;
+  font-weight: 700;
 }
 
 .table-panel {
