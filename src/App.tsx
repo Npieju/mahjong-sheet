@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
-import { createGameRow, isRowEmpty, resolveGameRow, SCORE_UNIT, TOTAL_POINTS, type GameRow } from './lib/sheet';
+import { createGameRow, resolveGameRow, SCORE_UNIT, TOTAL_POINTS, type GameRow } from './lib/sheet';
 import { buildShareUrl, loadSavedState, readSharedState, saveState, serializeState } from './lib/state';
 import { calculateGameResults, formatDelta } from './lib/settlement';
 
@@ -140,13 +140,23 @@ function App() {
         <details className="info-details" ref={infoDetailsRef}>
           <summary className="info-button" aria-label="使い方とルール">info</summary>
           <div className="info-popover">
-            <p>入力は 100 点単位です。右の 00 は固定表示です。</p>
-            <p>符号込み 4 文字まで入力できます。例: 350, -100</p>
-            <p>1 つだけ空欄なら、4 人目の点数を自動補完します。</p>
-            <p>雀魂式 4 麻です。25000 持ち、30000 返し、オカ 20、ウマ +15 +5 -5 -15、同点は座順優先です。</p>
-            <p>行の状態は背景色とツールチップで確認できます。</p>
-            <p>URL と localStorage に保存されます。外側を触るか Esc で閉じます。</p>
-            {games.every((row) => isRowEmpty(row)) ? <p>まず 1 行入れれば動く。</p> : null}
+            <p className="info-label">入力</p>
+            <ul className="info-list">
+              <li>100 点単位で入力。右の 00 は固定表示。</li>
+              <li>符号込み 4 文字まで入力可能。例: 350, -100</li>
+              <li>1 つだけ空欄なら 4 人目を自動補完。</li>
+            </ul>
+            <p className="info-label">計算仕様</p>
+            <ul className="info-list">
+              <li>4 麻の雀魂式。</li>
+              <li>25000 持ち、30000 返し。</li>
+              <li>オカ 20、ウマ +15 / +5 / -5 / -15。</li>
+              <li>同点時は座順優先。</li>
+            </ul>
+            <p className="info-label">保存</p>
+            <ul className="info-list">
+              <li>表の内容は URL と localStorage に保存。</li>
+            </ul>
           </div>
         </details>
       </header>
