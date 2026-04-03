@@ -126,11 +126,18 @@ function trimTrailingEmptyGames(games: GameRow[]) {
   return trimmedGames;
 }
 
+function isDefaultWindOrder(windOrder: GameRow['windOrder']) {
+  return windOrder.every((wind) => wind === null);
+}
+
+function serializeWindOrder(windOrder: GameRow['windOrder']) {
+  return windOrder.map((wind) => (wind === null ? '-' : String(wind))).join('');
+}
+
 function serializeCompactState(state: AppState) {
   const rows = trimTrailingEmptyGames(state.games)
     .map((game) => {
-      const windOrder = game.windOrder.join('');
-      const windSuffix = windOrder === DEFAULT_WIND_ORDER.join('') ? '' : `@${windOrder}`;
+      const windSuffix = isDefaultWindOrder(game.windOrder) ? '' : `@${serializeWindOrder(game.windOrder)}`;
       return `${game.scores.join(',')}${windSuffix}`;
     })
     .join(';');
@@ -172,10 +179,12 @@ function deserializeCompactState(value: string) {
 
       const windOrder =
         windOrderPart === undefined
-          ? ([...DEFAULT_WIND_ORDER] as [number, number, number, number])
+          ? ([...DEFAULT_WIND_ORDER] as [number | null, number | null, number | null, number | null])
           : windOrderPart.length === 1
             ? normalizeWindOrder(undefined, Number(windOrderPart))
-            : normalizeWindOrder(windOrderPart.split('').map((digit) => Number(digit)));
+            : normalizeWindOrder(
+                windOrderPart.split('').map((digit) => (digit === '-' ? null : Number(digit))),
+              );
 
       return {
         id: createGameRow().id,

@@ -164,7 +164,7 @@ function App() {
               <li>4 麻の雀魂式。</li>
               <li>25000 持ち、30000 返し。</li>
               <li>オカ 20、ウマ +15 / +5 / -5 / -15。</li>
-              <li>同点時は座順優先。各行で東南西北を個別に指定可能。</li>
+              <li>同点時は座順優先。必要なら - をクリックして各行の席順を指定。</li>
             </ul>
             <p className="info-label">保存</p>
             <ul className="info-list">
@@ -255,7 +255,7 @@ function App() {
                             )}
                             <button
                               type="button"
-                              className={`wind-button ${game.row.windOrder[seat] === 0 ? 'active' : ''}`}
+                              className={`wind-button ${game.row.windOrder[seat] !== null ? 'active' : ''}`}
                               onClick={() => cycleWindOrder(game.row.id, seat)}
                               title={`${playerNames[seat]} の風を切り替える`}
                               aria-label={`この行の ${playerNames[seat]} の風を切り替える`}

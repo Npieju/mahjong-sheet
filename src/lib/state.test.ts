@@ -16,12 +16,12 @@ describe('normalizeState', () => {
   it('accepts the current app state shape', () => {
     const state = normalizeState({
       playerNames: ['A', 'B', 'C', 'D'],
-      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [2, 3, 0, 1] }],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, 2, null, 1] }],
     });
 
     expect(state).toEqual({
       playerNames: ['A', 'B', 'C', 'D'],
-      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [2, 3, 0, 1] }],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, 2, null, 1] }],
     });
   });
 
@@ -39,7 +39,7 @@ describe('normalizeState', () => {
     expect(state?.playerNames).toEqual(['East', 'South', 'West', 'North']);
     expect(state?.games).toHaveLength(1);
     expect(state?.games[0]?.scores).toEqual(['350', '280', '220', '150']);
-    expect(state?.games[0]?.windOrder).toEqual([0, 1, 2, 3]);
+    expect(state?.games[0]?.windOrder).toEqual([null, null, null, null]);
   });
 
   it('falls back to defaults when names are missing but games are valid', () => {
@@ -71,7 +71,7 @@ describe('share serialization', () => {
   it('uses a compact format for default names', () => {
     const serialized = serializeState({
       playerNames: ['東', '南', '西', '北'],
-      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [0, 1, 2, 3] }],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
     });
 
     expect(serialized).toBe('v2|350,280,220,150');
@@ -82,7 +82,7 @@ describe('share serialization', () => {
       playerNames: ['A', 'B', 'C', 'D'],
       games: [
         { id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [2, 3, 0, 1] },
-        { id: 'g-2', scores: ['250', '250', '250', '250'], windOrder: [0, 1, 2, 3] },
+        { id: 'g-2', scores: ['250', '250', '250', '250'], windOrder: [null, null, null, null] },
       ],
     };
 
@@ -90,7 +90,7 @@ describe('share serialization', () => {
       playerNames: ['A', 'B', 'C', 'D'],
       games: [
         { id: expect.any(String), scores: ['350', '280', '220', '150'], windOrder: [2, 3, 0, 1] },
-        { id: expect.any(String), scores: ['250', '250', '250', '250'], windOrder: [0, 1, 2, 3] },
+        { id: expect.any(String), scores: ['250', '250', '250', '250'], windOrder: [null, null, null, null] },
       ],
     });
   });
@@ -98,7 +98,7 @@ describe('share serialization', () => {
   it('keeps old shared URLs readable', () => {
     const legacyState: AppState = {
       playerNames: ['東', '南', '西', '北'],
-      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [0, 1, 2, 3] }],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] }],
     };
 
     expect(deserializeState(serializeLegacyState(legacyState))).toEqual(legacyState);
@@ -108,7 +108,7 @@ describe('share serialization', () => {
     const state: AppState = {
       playerNames: ['東', '南', '西', '北'],
       games: [
-        { id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [0, 1, 2, 3] },
+        { id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, null, null, null] },
         { id: 'g-2', scores: ['270', '260', '250', '220'], windOrder: [3, 0, 1, 2] },
       ],
     };
@@ -119,10 +119,10 @@ describe('share serialization', () => {
   it('adds wind-order only when it is not the default', () => {
     const serialized = serializeState({
       playerNames: ['東', '南', '西', '北'],
-      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [0, 2, 3, 1] }],
+      games: [{ id: 'g-1', scores: ['350', '280', '220', '150'], windOrder: [null, 2, null, 1] }],
     });
 
-    expect(serialized).toBe('v2|350,280,220,150@0231');
+    expect(serialized).toBe('v2|350,280,220,150@-2-1');
   });
 
   it('keeps compact links with old east-seat suffix readable', () => {

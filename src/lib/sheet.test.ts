@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createGameRow, isRowEmpty, resolveGameRow } from './sheet';
+import { createGameRow, cycleWindOrderAtSeat, getTieBreakOrder, isRowEmpty, resolveGameRow } from './sheet';
 
 describe('resolveGameRow', () => {
   it('auto-fills the fourth score when three are provided', () => {
@@ -36,5 +36,25 @@ describe('resolveGameRow', () => {
 
   it('detects empty rows', () => {
     expect(isRowEmpty(createGameRow())).toBe(true);
+  });
+});
+
+describe('wind assignment helpers', () => {
+  it('starts with all seats unspecified', () => {
+    expect(createGameRow().windOrder).toEqual([null, null, null, null]);
+  });
+
+  it('cycles through only unused wind options plus dash', () => {
+    const windOrder = [0, 1, null, null] as const;
+
+    expect(cycleWindOrderAtSeat(windOrder, 2)).toEqual([0, 1, 2, null]);
+    expect(cycleWindOrderAtSeat([0, 1, 2, null], 2)).toEqual([0, 1, 3, null]);
+    expect(cycleWindOrderAtSeat([0, 1, 3, null], 2)).toEqual([0, 1, null, null]);
+  });
+
+  it('fills unspecified seats left to right for tie-break order', () => {
+    const windOrder = [null, 2, null, null] as const;
+
+    expect([0, 1, 2, 3].map((seat) => getTieBreakOrder(windOrder, seat))).toEqual([0, 2, 1, 3]);
   });
 });

@@ -1,7 +1,7 @@
 export type GameRow = {
   id: string;
   scores: [string, string, string, string];
-  windOrder: [number, number, number, number];
+  windOrder: [number | null, number | null, number | null, number | null];
 };
 
 export type ResolvedGameRow =
@@ -15,7 +15,7 @@ export const SCORE_UNIT = 100;
 export const TOTAL_POINTS = 100000;
 export const TOTAL_SCORE_UNITS = TOTAL_POINTS / SCORE_UNIT;
 export const WIND_LABELS = ['東', '南', '西', '北'] as const;
-export const DEFAULT_WIND_ORDER = [0, 1, 2, 3] as const;
+export const DEFAULT_WIND_ORDER = [null, null, null, null] as const;
 
 export function createGameRow(): GameRow {
   return {
@@ -33,40 +33,61 @@ export function rotateWindOrder(eastSeat: number): [number, number, number, numb
   return [0, 1, 2, 3].map((seat) => (seat - eastSeat + 4) % 4) as [number, number, number, number];
 }
 
-export function normalizeWindOrder(value: unknown, legacyEastSeat?: unknown): [number, number, number, number] {
+export function normalizeWindOrder(
+  value: unknown,
+  legacyEastSeat?: unknown,
+): [number | null, number | null, number | null, number | null] {
   if (Array.isArray(value) && value.length === 4) {
-    const normalized = value.map((entry) => (typeof entry === 'number' ? entry : Number.NaN));
-    const isValid = normalized.every((entry) => Number.isInteger(entry) && entry >= 0 && entry < 4);
+    const normalized = value.map((entry) => (entry === null ? null : typeof entry === 'number' ? entry : Number.NaN));
+    const numericValues = normalized.filter((entry): entry is number => entry !== null);
+    const isValid = numericValues.every((entry) => Number.isInteger(entry) && entry >= 0 && entry < 4);
 
-    if (isValid && new Set(normalized).size === 4) {
-      return normalized as [number, number, number, number];
+    if (isValid && new Set(numericValues).size === numericValues.length) {
+      return normalized as [number | null, number | null, number | null, number | null];
     }
   }
 
   return rotateWindOrder(normalizeEastSeat(legacyEastSeat));
 }
 
-export function getWindLabel(windOrder: readonly number[], seat: number) {
-  return WIND_LABELS[windOrder[seat] ?? 0];
+export function getWindLabel(windOrder: readonly (number | null)[], seat: number) {
+  const wind = windOrder[seat];
+  return wind === null || wind === undefined ? '-' : WIND_LABELS[wind];
 }
 
-export function getTieBreakOrder(windOrder: readonly number[], seat: number) {
-  return windOrder[seat] ?? seat;
+export function getTieBreakOrder(windOrder: readonly (number | null)[], seat: number) {
+  return expandWindOrder(windOrder)[seat] ?? seat;
 }
 
-export function cycleWindOrderAtSeat(windOrder: readonly number[], seat: number): [number, number, number, number] {
-  const currentWind = windOrder[seat] ?? 0;
-  const nextWind = (currentWind + 1) % 4;
-  const swapSeat = windOrder.findIndex((wind) => wind === nextWind);
-  const nextOrder = [...windOrder] as [number, number, number, number];
+export function expandWindOrder(windOrder: readonly (number | null)[]) {
+  const explicitWinds = new Set(windOrder.filter((wind): wind is number => wind !== null));
+  const remainingWinds = [0, 1, 2, 3].filter((wind) => !explicitWinds.has(wind));
+  let remainingIndex = 0;
 
-  if (swapSeat === -1) {
-    nextOrder[seat] = nextWind;
-    return nextOrder;
-  }
+  return windOrder.map((wind) => {
+    if (wind !== null && wind !== undefined) {
+      return wind;
+    }
 
+    const nextWind = remainingWinds[remainingIndex] ?? 0;
+    remainingIndex += 1;
+    return nextWind;
+  }) as [number, number, number, number];
+}
+
+export function cycleWindOrderAtSeat(
+  windOrder: readonly (number | null)[],
+  seat: number,
+): [number | null, number | null, number | null, number | null] {
+  const usedWinds = new Set(
+    windOrder.filter((wind, index): wind is number => index !== seat && wind !== null),
+  );
+  const options = [null, 0, 1, 2, 3].filter((wind) => wind === null || !usedWinds.has(wind));
+  const currentWind = windOrder[seat] ?? null;
+  const currentIndex = Math.max(options.findIndex((wind) => wind === currentWind), 0);
+  const nextWind = options[(currentIndex + 1) % options.length] ?? null;
+  const nextOrder = [...windOrder] as [number | null, number | null, number | null, number | null];
   nextOrder[seat] = nextWind;
-  nextOrder[swapSeat] = currentWind;
   return nextOrder;
 }
 
