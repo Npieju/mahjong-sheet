@@ -233,6 +233,17 @@ textarea {
   overflow-x: auto;
 }
 
+.share-section {
+  margin-top: 16px;
+}
+
+.share-label {
+  margin: 0 0 6px;
+  color: #666;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .table-wrap.exporting-image {
   overflow: visible;
   padding: 8px;
@@ -453,7 +464,6 @@ button {
 
 .share-input {
   width: 100%;
-  margin-top: 18px;
   border: 1px solid #d7d7d7;
   border-radius: 0;
   padding: 8px 10px;

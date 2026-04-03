@@ -477,7 +477,10 @@ function App() {
           </table>
         </div>
 
-        <input className="share-input" type="text" readOnly value={shareUrl} />
+        <div className="share-section">
+          <p className="share-label">共有用URL</p>
+          <input className="share-input" type="text" readOnly value={shareUrl} />
+        </div>
 
         <div className="bottom-actions">
           <button type="button" onClick={copyShareUrl}>{copied ? 'URLコピー済み' : 'URLコピー'}</button>
