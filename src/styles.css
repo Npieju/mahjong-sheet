@@ -144,8 +144,8 @@ textarea {
 }
 
 .score-input {
-  width: 4.6ch;
-  min-width: 4.6ch;
+  width: 5.4ch;
+  min-width: 5.4ch;
   text-align: right;
   padding-inline: 6px;
 }
@@ -262,7 +262,7 @@ button {
   }
 
   .score-input {
-    width: 4.2ch;
-    min-width: 4.2ch;
+    width: 5ch;
+    min-width: 5ch;
   }
 }

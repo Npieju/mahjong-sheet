@@ -58,7 +58,7 @@ function App() {
   };
 
   const updateGameScore = (rowId: string, seat: number, value: string) => {
-    if (!/^\d{0,3}$/.test(value)) {
+    if (!/^-?\d{0,3}$/.test(value)) {
       return;
     }
 
@@ -108,7 +108,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <h1>麻雀スコアシート</h1>
-        <p>100点単位 / 3桁入力</p>
+        <p>100点単位 / 符号付き3桁入力</p>
       </header>
 
       <section className="table-panel">
@@ -169,7 +169,7 @@ function App() {
                             <input
                               className="score-input"
                               type="text"
-                              inputMode="numeric"
+                              inputMode="text"
                               value={displayValue}
                               disabled={isAuto}
                               onChange={(event) => updateGameScore(game.row.id, seat, event.target.value)}
@@ -210,7 +210,7 @@ function App() {
         </div>
 
         <div className="notes-row">
-          <span>3桁で入力、右の 00 は固定です。</span>
+          <span>符号付き3桁で入力、右の 00 は固定です。</span>
           <span>空欄を 1 つだけ残すと 4 人目を自動補完します。</span>
           <span>URL と localStorage に保存します。</span>
         </div>

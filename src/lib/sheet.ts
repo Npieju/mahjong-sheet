@@ -24,12 +24,12 @@ export function createGameRow(): GameRow {
 function parseScore(value: string) {
   const trimmed = value.trim();
 
-  if (trimmed === '') {
+  if (trimmed === '' || trimmed === '-') {
     return null;
   }
 
   const parsed = Number(trimmed);
-  return Number.isInteger(parsed) && parsed >= 0 && parsed <= TOTAL_SCORE_UNITS ? parsed : Number.NaN;
+  return Number.isInteger(parsed) && parsed >= -TOTAL_SCORE_UNITS && parsed <= TOTAL_SCORE_UNITS ? parsed : Number.NaN;
 }
 
 export function isRowEmpty(row: GameRow) {

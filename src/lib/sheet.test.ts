@@ -23,6 +23,17 @@ describe('resolveGameRow', () => {
     });
   });
 
+  it('accepts negative score inputs', () => {
+    const row = createGameRow();
+    row.scores = ['350', '280', '380', '-10'];
+
+    expect(resolveGameRow(row)).toEqual({
+      kind: 'complete',
+      scores: [35000, 28000, 38000, -1000],
+      autoFilledSeat: null,
+    });
+  });
+
   it('detects empty rows', () => {
     expect(isRowEmpty(createGameRow())).toBe(true);
   });
