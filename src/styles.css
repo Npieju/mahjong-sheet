@@ -162,7 +162,7 @@ textarea {
 }
 
 .col-remove {
-  width: 26px;
+  width: 52px;
 }
 
 .score-table th,
@@ -301,8 +301,15 @@ textarea {
 }
 
 .remove-cell {
-  width: 26px;
+  width: 52px;
   text-align: center;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .total-count-cell {
@@ -390,6 +397,15 @@ button {
     min-width: 1.65rem;
     padding: 1px 3px;
     font-size: 0.62rem;
+  }
+
+  .col-remove,
+  .remove-cell {
+    width: 46px;
+  }
+
+  .row-actions {
+    gap: 2px;
   }
 
   .info-button {

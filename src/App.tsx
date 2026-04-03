@@ -109,6 +109,22 @@ function App() {
     setGames((currentGames) => [...currentGames, createGameRow()]);
   };
 
+  const recalculateGame = (rowId: string) => {
+    setGames((currentGames) =>
+      currentGames.map((row) => {
+        if (row.id !== rowId) {
+          return row;
+        }
+
+        return {
+          ...row,
+          scores: [...row.scores] as GameRow['scores'],
+          windOrder: [...row.windOrder] as GameRow['windOrder'],
+        };
+      }),
+    );
+  };
+
   const cycleWindOrder = (rowId: string, seat: number) => {
     setGames((currentGames) =>
       currentGames.map((row) => {
@@ -267,9 +283,20 @@ function App() {
                       );
                     })}
                     <td className="remove-cell">
-                      <button type="button" className="ghost-button" onClick={() => removeGame(game.row.id)}>
-                        ×
-                      </button>
+                      <div className="row-actions">
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => recalculateGame(game.row.id)}
+                          title="再計算"
+                          aria-label={`この行を再計算する`}
+                        >
+                          ↻
+                        </button>
+                        <button type="button" className="ghost-button" onClick={() => removeGame(game.row.id)}>
+                          ×
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
