@@ -4,7 +4,7 @@ import { createGameRow, isRowEmpty, resolveGameRow } from './sheet';
 describe('resolveGameRow', () => {
   it('auto-fills the fourth score when three are provided', () => {
     const row = createGameRow();
-    row.scores = ['35000', '28000', '22000', ''];
+    row.scores = ['350', '280', '220', ''];
 
     expect(resolveGameRow(row)).toEqual({
       kind: 'complete',
@@ -15,7 +15,7 @@ describe('resolveGameRow', () => {
 
   it('detects mismatched total when all four values are entered', () => {
     const row = createGameRow();
-    row.scores = ['35000', '28000', '22000', '14000'];
+    row.scores = ['350', '280', '220', '140'];
 
     expect(resolveGameRow(row)).toEqual({
       kind: 'mismatch',

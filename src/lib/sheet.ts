@@ -10,7 +10,9 @@ export type ResolvedGameRow =
   | { kind: 'mismatch'; diff: number }
   | { kind: 'complete'; scores: [number, number, number, number]; autoFilledSeat: number | null };
 
+export const SCORE_UNIT = 100;
 export const TOTAL_POINTS = 100000;
+export const TOTAL_SCORE_UNITS = TOTAL_POINTS / SCORE_UNIT;
 
 export function createGameRow(): GameRow {
   return {
@@ -22,12 +24,12 @@ export function createGameRow(): GameRow {
 function parseScore(value: string) {
   const trimmed = value.trim();
 
-  if (trimmed === '' || trimmed === '-') {
+  if (trimmed === '') {
     return null;
   }
 
   const parsed = Number(trimmed);
-  return Number.isInteger(parsed) ? parsed : Number.NaN;
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= TOTAL_SCORE_UNITS ? parsed : Number.NaN;
 }
 
 export function isRowEmpty(row: GameRow) {
@@ -36,6 +38,7 @@ export function isRowEmpty(row: GameRow) {
 
 export function resolveGameRow(row: GameRow, expectedTotal: number = TOTAL_POINTS): ResolvedGameRow {
   const parsedScores = row.scores.map(parseScore);
+  const expectedUnits = expectedTotal / SCORE_UNIT;
   const filledCount = parsedScores.filter((score) => typeof score === 'number' && !Number.isNaN(score)).length;
 
   if (filledCount === 0) {
@@ -58,17 +61,17 @@ export function resolveGameRow(row: GameRow, expectedTotal: number = TOTAL_POINT
     const knownTotal = parsedScores.reduce<number>((sum, score) => sum + (score ?? 0), 0);
     const autoFilledSeat = missingSeats[0].seat;
     const scores = [...parsedScores] as [number | null, number | null, number | null, number | null];
-    scores[autoFilledSeat] = expectedTotal - knownTotal;
+    scores[autoFilledSeat] = expectedUnits - knownTotal;
 
     return {
       kind: 'complete',
-      scores: scores as [number, number, number, number],
+      scores: (scores as [number, number, number, number]).map((score) => score * SCORE_UNIT) as [number, number, number, number],
       autoFilledSeat,
     };
   }
 
-  const scores = parsedScores as [number, number, number, number];
-  const diff = scores.reduce((sum, score) => sum + score, 0) - expectedTotal;
+  const scoreUnits = parsedScores as [number, number, number, number];
+  const diff = (scoreUnits.reduce((sum, score) => sum + score, 0) - expectedUnits) * SCORE_UNIT;
 
   if (diff !== 0) {
     return { kind: 'mismatch', diff };
@@ -76,7 +79,7 @@ export function resolveGameRow(row: GameRow, expectedTotal: number = TOTAL_POINT
 
   return {
     kind: 'complete',
-    scores,
+    scores: scoreUnits.map((score) => score * SCORE_UNIT) as [number, number, number, number],
     autoFilledSeat: null,
   };
 }

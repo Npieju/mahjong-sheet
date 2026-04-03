@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
-import { createGameRow, isRowEmpty, resolveGameRow, TOTAL_POINTS, type GameRow } from './lib/sheet';
+import { createGameRow, isRowEmpty, resolveGameRow, SCORE_UNIT, TOTAL_POINTS, type GameRow } from './lib/sheet';
 import { buildShareUrl, loadSavedState, readSharedState, saveState, serializeState } from './lib/state';
-import { calculateGameResults, formatDelta, getStandings, MAHJONG_SOUL_RULE } from './lib/settlement';
+import { calculateGameResults, formatDelta, MAHJONG_SOUL_RULE } from './lib/settlement';
 
 function App() {
   const initialState = readSharedState() ?? loadSavedState() ?? defaultState;
@@ -51,7 +51,6 @@ function App() {
 
     return totals as [number, number, number, number];
   }, [completeGames]);
-  const standings = useMemo(() => getStandings(playerNames, cumulativeTotals), [cumulativeTotals, playerNames]);
   const shareUrl = useMemo(() => buildShareUrl(serializeState({ playerNames, games })), [games, playerNames]);
 
   const updatePlayerName = (seat: number, value: string) => {
@@ -59,7 +58,7 @@ function App() {
   };
 
   const updateGameScore = (rowId: string, seat: number, value: string) => {
-    if (!/^-?\d*$/.test(value)) {
+    if (!/^\d{0,3}$/.test(value)) {
       return;
     }
 
@@ -109,18 +108,8 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <h1>麻雀スコアシート</h1>
-        <p>雀魂式 4麻 / 25000持ち / 30000返し / ウマ +15 +5 -5 -15 / 同点は座順優先</p>
+        <p>100点単位 / 3桁入力</p>
       </header>
-
-      <section className="summary-strip">
-        {standings.map((entry) => (
-          <article className="summary-card" key={entry.seat}>
-            <div className="summary-rank">{entry.rank}位</div>
-            <div className="summary-name">{entry.name}</div>
-            <div className="summary-score">{formatDelta(entry.total)}</div>
-          </article>
-        ))}
-      </section>
 
       <section className="table-panel">
         <div className="toolbar">
@@ -170,17 +159,23 @@ function App() {
                     {game.row.scores.map((score, seat) => {
                       const result = game.results?.find((entry) => entry.seat === seat) ?? null;
                       const isAuto = autoFilledSeat === seat;
-                      const displayValue = isAuto && game.resolution.kind === 'complete' ? String(game.resolution.scores[seat]) : score;
+                      const displayValue = isAuto && game.resolution.kind === 'complete'
+                        ? String(game.resolution.scores[seat] / SCORE_UNIT)
+                        : score;
 
                       return (
                         <td key={`${game.row.id}-${seat}`} className={isAuto ? 'auto-cell' : undefined}>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            value={displayValue}
-                            disabled={isAuto}
-                            onChange={(event) => updateGameScore(game.row.id, seat, event.target.value)}
-                          />
+                          <div className="score-input-wrap">
+                            <input
+                              className="score-input"
+                              type="text"
+                              inputMode="numeric"
+                              value={displayValue}
+                              disabled={isAuto}
+                              onChange={(event) => updateGameScore(game.row.id, seat, event.target.value)}
+                            />
+                            <span className="score-suffix">00</span>
+                          </div>
                           {result ? (
                             <div className={`result-chip ${result.total >= 0 ? 'plus' : 'minus'}`}>
                               {formatDelta(result.total)}
@@ -215,6 +210,7 @@ function App() {
         </div>
 
         <div className="notes-row">
+          <span>3桁で入力、右の 00 は固定です。</span>
           <span>空欄を 1 つだけ残すと 4 人目を自動補完します。</span>
           <span>URL と localStorage に保存します。</span>
         </div>
