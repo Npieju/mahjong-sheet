@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { toPng } from 'html-to-image';
+import { toBlob, toPng } from 'html-to-image';
 import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
 import { createGameRow, cycleWindOrderAtSeat, getTieBreakOrder, getWindLabel, resolveGameRow, SCORE_UNIT, type GameRow } from './lib/sheet';
@@ -229,11 +229,28 @@ function App() {
 
     try {
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-      const dataUrl = await toPng(node, {
+      const exportOptions = {
         backgroundColor: '#ffffff',
         pixelRatio: 2,
         cacheBust: true,
-      });
+      };
+      const blob = await toBlob(node, exportOptions);
+
+      if (!blob) {
+        return;
+      }
+
+      const file = new File([blob], 'mahjong-sheet.png', { type: 'image/png' });
+
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'mahjong-sheet',
+        });
+        return;
+      }
+
+      const dataUrl = await toPng(node, exportOptions);
       const anchor = document.createElement('a');
       anchor.href = dataUrl;
       anchor.download = 'mahjong-sheet.png';

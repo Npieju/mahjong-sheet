@@ -248,6 +248,10 @@ textarea {
   display: none;
 }
 
+.table-wrap.exporting-image .add-row {
+  display: none;
+}
+
 .score-table {
   width: 100%;
   min-width: 0;
