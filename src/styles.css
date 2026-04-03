@@ -303,6 +303,11 @@ textarea {
   padding-inline: 0;
 }
 
+.table-wrap.exporting-image .score-table th,
+.table-wrap.exporting-image .score-table td {
+  border: 1px solid #dcdcdc;
+}
+
 .score-table {
   width: 100%;
   min-width: 0;
@@ -340,6 +345,12 @@ textarea {
 .score-table tfoot td {
   border-bottom: 0;
   padding-top: 10px;
+}
+
+.score-table tfoot th,
+.score-table tfoot td,
+.score-table tfoot .result-chip {
+  font-weight: 700;
 }
 
 .add-row td {
