@@ -64,7 +64,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
+  min-width: 48px;
   height: 28px;
   border: 1px solid #cfc3b3;
   border-radius: 999px;
@@ -73,6 +73,9 @@ textarea {
   cursor: pointer;
   list-style: none;
   user-select: none;
+  padding: 0 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
 }
 
 .info-button::-webkit-details-marker {
@@ -106,15 +109,15 @@ textarea {
   padding: 8px;
 }
 
-.toolbar {
+.bottom-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.toolbar {
-  margin-bottom: 8px;
+.bottom-actions {
+  margin-top: 8px;
   flex-wrap: wrap;
 }
 
@@ -163,6 +166,17 @@ textarea {
 .score-table tfoot td {
   border-bottom: 0;
   padding-top: 10px;
+}
+
+.add-row td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.inline-add-button {
+  width: 100%;
+  border-style: dashed;
+  color: #666;
 }
 
 .score-table input {
@@ -271,7 +285,7 @@ button {
 
 @media (max-width: 900px) {
   .topbar,
-  .toolbar {
+  .bottom-actions {
     flex-direction: column;
     align-items: start;
   }
@@ -324,9 +338,10 @@ button {
   }
 
   .info-button {
-    width: 24px;
+    min-width: 42px;
     height: 24px;
-    font-size: 0.78rem;
+    font-size: 0.68rem;
+    padding-inline: 8px;
   }
 
   .info-popover {

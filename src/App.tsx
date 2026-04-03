@@ -109,7 +109,7 @@ function App() {
       <header className="topbar">
         <h1>麻雀スコアシート</h1>
         <details className="info-details">
-          <summary className="info-button" aria-label="使い方とルール">i</summary>
+          <summary className="info-button" aria-label="使い方とルール">info</summary>
           <div className="info-popover">
             <p>100点単位、符号込み4文字入力。右の 00 は固定。</p>
             <p>空欄を 1 つだけ残すと 4 人目を自動補完。</p>
@@ -122,12 +122,6 @@ function App() {
       </header>
 
       <section className="table-panel">
-        <div className="toolbar">
-          <button type="button" onClick={addGame}>行を追加</button>
-          <button type="button" onClick={downloadCsv}>CSV</button>
-          <button type="button" onClick={copyShareUrl}>{copied ? 'URLコピー済み' : 'URLをコピー'}</button>
-        </div>
-
         <div className="table-wrap">
           <table className="score-table">
             <colgroup>
@@ -213,6 +207,12 @@ function App() {
                   </tr>
                 );
               })}
+              <tr className="add-row">
+                <th scope="row">{games.length + 1}</th>
+                <td colSpan={6}>
+                  <button type="button" className="inline-add-button" onClick={addGame}>行追加</button>
+                </td>
+              </tr>
             </tbody>
             <tfoot>
               <tr>
@@ -230,6 +230,11 @@ function App() {
         </div>
 
         <input className="share-input" type="text" readOnly value={shareUrl} />
+
+        <div className="bottom-actions">
+          <button type="button" onClick={downloadCsv}>CSV</button>
+          <button type="button" onClick={copyShareUrl}>{copied ? 'URLコピー済み' : 'URLコピー'}</button>
+        </div>
       </section>
     </main>
   );
