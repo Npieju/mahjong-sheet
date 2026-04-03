@@ -3,7 +3,7 @@ import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
 import { createGameRow, isRowEmpty, resolveGameRow, SCORE_UNIT, TOTAL_POINTS, type GameRow } from './lib/sheet';
 import { buildShareUrl, loadSavedState, readSharedState, saveState, serializeState } from './lib/state';
-import { calculateGameResults, formatDelta, MAHJONG_SOUL_RULE } from './lib/settlement';
+import { calculateGameResults, formatDelta } from './lib/settlement';
 
 function App() {
   const initialState = readSharedState() ?? loadSavedState() ?? defaultState;
@@ -108,7 +108,17 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <h1>麻雀スコアシート</h1>
-        <p>100点単位 / 符号込み4文字</p>
+        <details className="info-details">
+          <summary className="info-button" aria-label="使い方とルール">i</summary>
+          <div className="info-popover">
+            <p>100点単位、符号込み4文字入力。右の 00 は固定。</p>
+            <p>空欄を 1 つだけ残すと 4 人目を自動補完。</p>
+            <p>雀魂式 4麻。25000持ち、30000返し、オカ20、ウマ +15 +5 -5 -15、同点は座順優先。</p>
+            <p>状態: 未=未入力、補=補完待ち、数=数値不正、差=合計不一致、自=自動補完。</p>
+            <p>URL と localStorage に保存。</p>
+            {games.every((row) => isRowEmpty(row)) ? <p>まず 1 行入れれば動く。</p> : null}
+          </div>
+        </details>
       </header>
 
       <section className="table-panel">
@@ -120,6 +130,15 @@ function App() {
 
         <div className="table-wrap">
           <table className="score-table">
+            <colgroup>
+              <col className="col-index" />
+              <col className="col-score" />
+              <col className="col-score" />
+              <col className="col-score" />
+              <col className="col-score" />
+              <col className="col-status" />
+              <col className="col-remove" />
+            </colgroup>
             <thead>
               <tr>
                 <th>#</th>
@@ -142,16 +161,16 @@ function App() {
                 const autoFilledSeat = game.resolution.kind === 'complete' ? game.resolution.autoFilledSeat : null;
                 const rowStatus =
                   game.resolution.kind === 'empty'
-                    ? '未'
+                    ? { short: '未', long: '未入力' }
                     : game.resolution.kind === 'partial'
-                      ? '補'
+                      ? { short: '補', long: '3人入力で補完待ち' }
                       : game.resolution.kind === 'invalid'
-                        ? '数'
+                        ? { short: '数', long: '数値不正' }
                         : game.resolution.kind === 'mismatch'
-                          ? `合計 ${game.resolution.diff > 0 ? '+' : ''}${game.resolution.diff}`
+                          ? { short: '差', long: `合計差 ${game.resolution.diff > 0 ? '+' : ''}${game.resolution.diff}` }
                           : autoFilledSeat === null
-                            ? 'OK'
-                            : '自';
+                            ? { short: 'OK', long: '計算可' }
+                            : { short: '自', long: '自動補完' };
 
                 return (
                   <tr key={game.row.id} className={game.resolution.kind === 'mismatch' ? 'row-warn' : undefined}>
@@ -185,7 +204,7 @@ function App() {
                         </td>
                       );
                     })}
-                    <td className="status-cell">{rowStatus}</td>
+                    <td className="status-cell" title={rowStatus.long}>{rowStatus.short}</td>
                     <td className="remove-cell">
                       <button type="button" className="ghost-button" onClick={() => removeGame(game.row.id)}>
                         ×
@@ -203,30 +222,15 @@ function App() {
                     <div className={`result-chip ${total >= 0 ? 'plus' : 'minus'}`}>{formatDelta(total)}</div>
                   </td>
                 ))}
-                <td>{completeGames.length}局</td>
+                <td className="status-cell">{completeGames.length}</td>
                 <td />
               </tr>
             </tfoot>
           </table>
         </div>
 
-        <div className="notes-row">
-          <span>符号込み4文字、右の 00 は固定です。</span>
-          <span>空欄を 1 つだけ残すと 4 人目を自動補完します。</span>
-          <span>URL と localStorage に保存します。</span>
-        </div>
-
         <input className="share-input" type="text" readOnly value={shareUrl} />
       </section>
-
-      <section className="rule-panel">
-        <div>持ち点 {MAHJONG_SOUL_RULE.startPoint.toLocaleString()}</div>
-        <div>返し点 {MAHJONG_SOUL_RULE.returnPoint.toLocaleString()}</div>
-        <div>オカ {(MAHJONG_SOUL_RULE.okaPoints / 1000).toFixed(0)}</div>
-        <div>合計 {TOTAL_POINTS.toLocaleString()} 点</div>
-      </section>
-
-      <section className="empty-hint">{games.every((row) => isRowEmpty(row)) ? 'まず 1 行入れれば動きます。' : null}</section>
     </main>
   );
 }

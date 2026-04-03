@@ -38,7 +38,7 @@ textarea {
 
 .topbar {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 10px;
@@ -49,27 +49,64 @@ textarea {
   font-size: clamp(1.6rem, 4vw, 2.4rem);
 }
 
-.topbar p {
-  margin: 0;
-  color: #555;
-  font-size: 0.84rem;
-}
-
-.table-panel,
-.rule-panel {
+.table-panel {
   border: 1px solid #d9d0c3;
   border-radius: 18px;
   background: rgba(255, 252, 247, 0.92);
   box-shadow: 0 10px 30px rgba(48, 36, 21, 0.06);
 }
 
+.info-details {
+  position: relative;
+}
+
+.info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #cfc3b3;
+  border-radius: 999px;
+  background: #fffdfa;
+  color: #444;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.info-button::-webkit-details-marker {
+  display: none;
+}
+
+.info-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 2;
+  width: min(300px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border: 1px solid #d9d0c3;
+  border-radius: 12px;
+  background: rgba(255, 252, 247, 0.98);
+  box-shadow: 0 10px 30px rgba(48, 36, 21, 0.12);
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.info-popover p {
+  margin: 0;
+}
+
+.info-popover p + p {
+  margin-top: 6px;
+}
+
 .table-panel {
   padding: 8px;
 }
 
-.toolbar,
-.notes-row,
-.rule-panel {
+.toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -93,6 +130,22 @@ textarea {
   font-size: 0.82rem;
 }
 
+.col-index {
+  width: 28px;
+}
+
+.col-score {
+  width: calc((100% - 92px) / 4);
+}
+
+.col-status {
+  width: 26px;
+}
+
+.col-remove {
+  width: 26px;
+}
+
 .score-table th,
 .score-table td {
   padding: 6px 4px;
@@ -104,18 +157,6 @@ textarea {
 .score-table thead th {
   font-size: 0.8rem;
   color: #666;
-}
-
-.score-table thead th:first-child,
-.score-table tbody th,
-.score-table tfoot th {
-  width: 28px;
-}
-
-.score-table thead th:last-child,
-.score-table tbody td:last-child,
-.score-table tfoot td:last-child {
-  width: 28px;
 }
 
 .score-table tfoot th,
@@ -195,12 +236,13 @@ textarea {
 .status-cell {
   white-space: nowrap;
   color: #6a6458;
-  width: 42px;
+  width: 26px;
   font-size: 0.72rem;
+  text-align: center;
 }
 
 .remove-cell {
-  width: 28px;
+  width: 26px;
 }
 
 button {
@@ -218,13 +260,6 @@ button {
   padding-block: 4px;
 }
 
-.notes-row {
-  margin-top: 8px;
-  font-size: 0.8rem;
-  color: #666;
-  flex-wrap: wrap;
-}
-
 .share-input {
   width: 100%;
   margin-top: 8px;
@@ -234,25 +269,9 @@ button {
   background: #fffdfa;
 }
 
-.rule-panel {
-  margin-top: 12px;
-  padding: 10px 12px;
-  color: #555;
-  flex-wrap: wrap;
-  font-size: 0.78rem;
-}
-
-.empty-hint {
-  margin-top: 10px;
-  min-height: 1.5rem;
-  color: #777;
-}
-
 @media (max-width: 900px) {
   .topbar,
-  .toolbar,
-  .notes-row,
-  .rule-panel {
+  .toolbar {
     flex-direction: column;
     align-items: start;
   }
@@ -300,12 +319,18 @@ button {
   }
 
   .status-cell {
-    width: 32px;
+    width: 22px;
     font-size: 0.64rem;
   }
 
-  .notes-row,
-  .rule-panel {
-    font-size: 0.7rem;
+  .info-button {
+    width: 24px;
+    height: 24px;
+    font-size: 0.78rem;
+  }
+
+  .info-popover {
+    width: min(260px, calc(100vw - 12px));
+    font-size: 0.68rem;
   }
 }
