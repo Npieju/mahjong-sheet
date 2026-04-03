@@ -56,7 +56,7 @@ describe('calculateGameResults', () => {
         { seat: 2, name: '西', score: 32200 },
         { seat: 3, name: '北', score: 19700 },
       ],
-      { startPoint: 30000, returnPoint: 30000, okaPoints: 0, uma: [20, 10, -10, -20] },
+      { startPoint: 30000, uma: [20, 10, -10, -20] },
     );
 
     expect(results.map((result) => result.total)).toEqual([25.7, 12.4, -7.8, -30.3]);

@@ -153,12 +153,7 @@ function serializeCompactState(state: AppState) {
   }
 
   if (!isDefaultRule(state.rules)) {
-    const compactRule = [
-      state.rules.startPoint,
-      state.rules.returnPoint,
-      state.rules.okaPoints / 1000,
-      ...state.rules.uma,
-    ].join(',');
+    const compactRule = [state.rules.startPoint, ...state.rules.uma].join(',');
     sections.push(`r:${compactRule}`);
   }
 
@@ -242,14 +237,23 @@ function deserializeCompactState(value: string) {
     }
 
     if (part.startsWith('r:')) {
-      const [startPoint, returnPoint, okaValue, ...uma] = part.slice(2).split(',').map((entry) => Number(entry));
+      const values = part.slice(2).split(',').map((entry) => Number(entry));
 
-      rules = normalizeRule({
-        startPoint,
-        returnPoint,
-        okaPoints: okaValue * 1000,
-        uma,
-      });
+      if (values.length === 5) {
+        const [startPoint, ...uma] = values;
+        rules = normalizeRule({ startPoint, uma });
+        continue;
+      }
+
+      if (values.length >= 6) {
+        const [startPoint, returnPoint, okaValue, ...uma] = values;
+        rules = normalizeRule({
+          startPoint,
+          returnPoint,
+          okaPoints: okaValue * 1000,
+          uma,
+        });
+      }
     }
   }
 

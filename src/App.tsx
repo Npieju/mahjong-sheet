@@ -101,7 +101,7 @@ function App() {
     setPlayerNames((current) => current.map((name, index) => (index === seat ? value : name)) as typeof current);
   };
 
-  const updateRulePointUnits = (key: 'startPoint' | 'returnPoint', value: string) => {
+  const updateRulePointUnits = (key: 'startPoint', value: string) => {
     if (!/^\d{0,4}$/.test(value)) {
       return;
     }
@@ -109,16 +109,6 @@ function App() {
     const nextValue = value === '' ? 0 : Number.parseInt(value, 10) * SCORE_UNIT;
 
     setRules((current) => ({ ...current, [key]: nextValue }));
-  };
-
-  const updateOka = (value: string) => {
-    const nextValue = Number.parseInt(value, 10);
-
-    if (Number.isNaN(nextValue)) {
-      return;
-    }
-
-    setRules((current) => ({ ...current, okaPoints: nextValue * 1000 }));
   };
 
   const updateUma = (index: number, value: string) => {
@@ -138,8 +128,6 @@ function App() {
   const resetRules = () => {
     setRules({
       startPoint: DEFAULT_RULE.startPoint,
-      returnPoint: DEFAULT_RULE.returnPoint,
-      okaPoints: DEFAULT_RULE.okaPoints,
       uma: [...DEFAULT_RULE.uma],
     });
   };
@@ -284,26 +272,8 @@ function App() {
                     <span className="settings-point-suffix">00</span>
                   </div>
                 </label>
-                <label className="settings-field">
-                  <span>返し点</span>
-                  <div className="settings-point-wrap">
-                    <input
-                      className="settings-point-input"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={4}
-                      value={String(rules.returnPoint / SCORE_UNIT)}
-                      onChange={(event) => updateRulePointUnits('returnPoint', event.target.value)}
-                    />
-                    <span className="settings-point-suffix">00</span>
-                  </div>
-                </label>
-                <label className="settings-field">
-                  <span>オカ</span>
-                  <input type="number" value={rules.okaPoints / 1000} onChange={(event) => updateOka(event.target.value)} />
-                </label>
                 <label className="settings-field settings-field-wide">
-                  <span>ウマ</span>
+                  <span>順位点</span>
                   <div className="uma-grid">
                     {rules.uma.map((value, index) => (
                       <input key={`uma-${index}`} type="number" value={value} onChange={(event) => updateUma(index, event.target.value)} />
@@ -327,8 +297,8 @@ function App() {
               </ul>
               <p className="info-label">現在の計算仕様</p>
               <ul className="info-list">
-                <li>{rules.startPoint} 持ち、{rules.returnPoint} 返し。</li>
-                <li>オカ {rules.okaPoints / 1000}、ウマ {rules.uma.map((value) => `${value >= 0 ? '+' : ''}${value}`).join(' / ')}。</li>
+                <li>雀魂表示に合わせて、({rules.startPoint} を基準にした素点差) + ウマで計算。</li>
+                <li>ウマ {rules.uma.map((value) => `${value >= 0 ? '+' : ''}${value}`).join(' / ')}。</li>
                 <li>同点時は座順優先。必要なら - をクリックして各行の席順を指定。</li>
               </ul>
               <p className="info-label">参考</p>

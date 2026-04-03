@@ -7,9 +7,7 @@ export type MahjongSoulPlayer = {
 
 export type ScoringRule = {
   startPoint: number;
-  returnPoint: number;
   uma: [number, number, number, number];
-  okaPoints: number;
 };
 
 export type MahjongSoulRule = ScoringRule;
@@ -30,16 +28,7 @@ export type Standing = {
 
 export const DEFAULT_RULE: ScoringRule = {
   startPoint: 25000,
-  returnPoint: 25000,
   uma: [15, 5, -5, -15],
-  okaPoints: 0,
-};
-
-const LEGACY_DEFAULT_RULE: ScoringRule = {
-  startPoint: 25000,
-  returnPoint: 30000,
-  uma: [15, 5, -5, -15],
-  okaPoints: 20000,
 };
 
 export const MAHJONG_SOUL_RULE = DEFAULT_RULE;
@@ -50,8 +39,6 @@ function toInteger(value: unknown) {
 
 function rulesMatch(left: ScoringRule, right: ScoringRule) {
   return left.startPoint === right.startPoint
-    && left.returnPoint === right.returnPoint
-    && left.okaPoints === right.okaPoints
     && left.uma.every((value, index) => value === right.uma[index]);
 }
 
@@ -62,24 +49,18 @@ export function normalizeRule(value: unknown): ScoringRule {
 
   const candidate = value as Partial<ScoringRule>;
   const startPoint = toInteger(candidate.startPoint);
-  const returnPoint = toInteger(candidate.returnPoint);
-  const okaPoints = toInteger(candidate.okaPoints);
   const uma = Array.isArray(candidate.uma) && candidate.uma.length === 4
     ? candidate.uma.map((entry) => toInteger(entry) ?? 0)
     : null;
 
-  if (startPoint === null || returnPoint === null || okaPoints === null || uma === null) {
+  if (startPoint === null || uma === null) {
     return DEFAULT_RULE;
   }
 
-  const normalized = {
+  return {
     startPoint,
-    returnPoint,
-    okaPoints,
     uma: uma as [number, number, number, number],
   };
-
-  return rulesMatch(normalized, LEGACY_DEFAULT_RULE) ? DEFAULT_RULE : normalized;
 }
 
 export function isDefaultRule(rule: ScoringRule) {
@@ -106,8 +87,7 @@ export function calculateGameResults(players: MahjongSoulPlayer[], rules: Scorin
 
   for (const [index, player] of placements.entries()) {
     const rank = index + 1;
-    const oka = index === 0 ? rules.okaPoints : 0;
-    const baseScore = roundToTenths((player.score + oka - rules.returnPoint) / 1000);
+    const baseScore = roundToTenths((player.score - rules.startPoint) / 1000);
     const uma = rules.uma[index] ?? 0;
 
     bySeat.set(player.seat, {
