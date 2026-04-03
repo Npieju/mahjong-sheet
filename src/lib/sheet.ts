@@ -1,7 +1,7 @@
 export type GameRow = {
   id: string;
   scores: [string, string, string, string];
-  eastSeat: number;
+  windOrder: [number, number, number, number];
 };
 
 export type ResolvedGameRow =
@@ -15,12 +15,13 @@ export const SCORE_UNIT = 100;
 export const TOTAL_POINTS = 100000;
 export const TOTAL_SCORE_UNITS = TOTAL_POINTS / SCORE_UNIT;
 export const WIND_LABELS = ['東', '南', '西', '北'] as const;
+export const DEFAULT_WIND_ORDER = [0, 1, 2, 3] as const;
 
 export function createGameRow(): GameRow {
   return {
     id: `g-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     scores: ['', '', '', ''],
-    eastSeat: 0,
+    windOrder: [...DEFAULT_WIND_ORDER],
   };
 }
 
@@ -28,12 +29,45 @@ export function normalizeEastSeat(value: unknown) {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < 4 ? value : 0;
 }
 
-export function getWindLabel(eastSeat: number, seat: number) {
-  return WIND_LABELS[(seat - eastSeat + 4) % 4];
+export function rotateWindOrder(eastSeat: number): [number, number, number, number] {
+  return [0, 1, 2, 3].map((seat) => (seat - eastSeat + 4) % 4) as [number, number, number, number];
 }
 
-export function getTieBreakOrder(eastSeat: number, seat: number) {
-  return (seat - eastSeat + 4) % 4;
+export function normalizeWindOrder(value: unknown, legacyEastSeat?: unknown): [number, number, number, number] {
+  if (Array.isArray(value) && value.length === 4) {
+    const normalized = value.map((entry) => (typeof entry === 'number' ? entry : Number.NaN));
+    const isValid = normalized.every((entry) => Number.isInteger(entry) && entry >= 0 && entry < 4);
+
+    if (isValid && new Set(normalized).size === 4) {
+      return normalized as [number, number, number, number];
+    }
+  }
+
+  return rotateWindOrder(normalizeEastSeat(legacyEastSeat));
+}
+
+export function getWindLabel(windOrder: readonly number[], seat: number) {
+  return WIND_LABELS[windOrder[seat] ?? 0];
+}
+
+export function getTieBreakOrder(windOrder: readonly number[], seat: number) {
+  return windOrder[seat] ?? seat;
+}
+
+export function cycleWindOrderAtSeat(windOrder: readonly number[], seat: number): [number, number, number, number] {
+  const currentWind = windOrder[seat] ?? 0;
+  const nextWind = (currentWind + 1) % 4;
+  const swapSeat = windOrder.findIndex((wind) => wind === nextWind);
+  const nextOrder = [...windOrder] as [number, number, number, number];
+
+  if (swapSeat === -1) {
+    nextOrder[seat] = nextWind;
+    return nextOrder;
+  }
+
+  nextOrder[seat] = nextWind;
+  nextOrder[swapSeat] = currentWind;
+  return nextOrder;
 }
 
 function parseScore(value: string) {

@@ -1,4 +1,4 @@
-import { createGameRow, isRowEmpty, normalizeEastSeat, SCORE_UNIT, type GameRow } from './sheet';
+import { createGameRow, DEFAULT_WIND_ORDER, isRowEmpty, normalizeWindOrder, SCORE_UNIT, type GameRow } from './sheet';
 
 export type AppState = {
   playerNames: [string, string, string, string];
@@ -69,7 +69,7 @@ function normalizeGames(value: unknown): GameRow[] | null {
       return {
         id: typeof entry.id === 'string' && entry.id ? entry.id : createGameRow().id,
         scores: entry.scores.map(normalizeScoreValue) as GameRow['scores'],
-        eastSeat: normalizeEastSeat(entry.eastSeat),
+        windOrder: normalizeWindOrder(entry.windOrder, entry.eastSeat),
       } satisfies GameRow;
     })
     .filter((entry): entry is GameRow => entry !== null);
@@ -90,7 +90,7 @@ function normalizeLegacyGames(value: unknown): GameRow[] | null {
     return String(entry.score / SCORE_UNIT);
   }) as GameRow['scores'];
 
-  return [{ id: createGameRow().id, scores, eastSeat: 0 }];
+  return [{ id: createGameRow().id, scores, windOrder: [...DEFAULT_WIND_ORDER] }];
 }
 
 export function normalizeState(raw: unknown): AppState | null {
@@ -128,7 +128,11 @@ function trimTrailingEmptyGames(games: GameRow[]) {
 
 function serializeCompactState(state: AppState) {
   const rows = trimTrailingEmptyGames(state.games)
-    .map((game) => `${game.scores.join(',')}${game.eastSeat === 0 ? '' : `@${game.eastSeat}`}`)
+    .map((game) => {
+      const windOrder = game.windOrder.join('');
+      const windSuffix = windOrder === DEFAULT_WIND_ORDER.join('') ? '' : `@${windOrder}`;
+      return `${game.scores.join(',')}${windSuffix}`;
+    })
     .join(';');
 
   if (isDefaultPlayerNames(state.playerNames)) {
@@ -155,21 +159,28 @@ function deserializeCompactState(value: string) {
   const games = rowsPart
     .split(';')
     .map((row) => {
-      const [scorePart, eastSeatPart] = row.split('@');
+      const [scorePart, windOrderPart] = row.split('@');
       return {
         scores: scorePart.split(','),
-        eastSeat: eastSeatPart === undefined ? 0 : Number(eastSeatPart),
+        windOrderPart,
       };
     })
-    .map(({ scores, eastSeat }) => {
+    .map(({ scores, windOrderPart }) => {
       if (scores.length !== 4) {
         return null;
       }
 
+      const windOrder =
+        windOrderPart === undefined
+          ? ([...DEFAULT_WIND_ORDER] as [number, number, number, number])
+          : windOrderPart.length === 1
+            ? normalizeWindOrder(undefined, Number(windOrderPart))
+            : normalizeWindOrder(windOrderPart.split('').map((digit) => Number(digit)));
+
       return {
         id: createGameRow().id,
         scores: scores as GameRow['scores'],
-        eastSeat: normalizeEastSeat(eastSeat),
+        windOrder,
       } satisfies GameRow;
     })
     .filter((game): game is GameRow => game !== null);

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
-import { createGameRow, getTieBreakOrder, getWindLabel, resolveGameRow, SCORE_UNIT, TOTAL_POINTS, type GameRow } from './lib/sheet';
+import { createGameRow, cycleWindOrderAtSeat, getTieBreakOrder, getWindLabel, resolveGameRow, SCORE_UNIT, TOTAL_POINTS, type GameRow } from './lib/sheet';
 import { buildShareUrl, loadSavedState, readSharedState, saveState, serializeState } from './lib/state';
 import { calculateGameResults, formatDelta } from './lib/settlement';
 
@@ -61,7 +61,7 @@ function App() {
               seat,
               name: playerNames[seat],
               score,
-              tieBreakOrder: getTieBreakOrder(row.eastSeat, seat),
+              tieBreakOrder: getTieBreakOrder(row.windOrder, seat),
             })),
           ),
         };
@@ -109,14 +109,14 @@ function App() {
     setGames((currentGames) => [...currentGames, createGameRow()]);
   };
 
-  const updateEastSeat = (rowId: string, eastSeat: number) => {
+  const cycleWindOrder = (rowId: string, seat: number) => {
     setGames((currentGames) =>
       currentGames.map((row) => {
         if (row.id !== rowId) {
           return row;
         }
 
-        return { ...row, eastSeat };
+        return { ...row, windOrder: cycleWindOrderAtSeat(row.windOrder, seat) };
       }),
     );
   };
@@ -164,7 +164,7 @@ function App() {
               <li>4 麻の雀魂式。</li>
               <li>25000 持ち、30000 返し。</li>
               <li>オカ 20、ウマ +15 / +5 / -5 / -15。</li>
-              <li>同点時は座順優先。各行の風ボタンで指定可能。</li>
+              <li>同点時は座順優先。各行で東南西北を個別に指定可能。</li>
             </ul>
             <p className="info-label">保存</p>
             <ul className="info-list">
@@ -255,12 +255,12 @@ function App() {
                             )}
                             <button
                               type="button"
-                              className={`wind-button ${game.row.eastSeat === seat ? 'active' : ''}`}
-                              onClick={() => updateEastSeat(game.row.id, seat)}
-                              title={`${playerNames[seat]} をこの行の東家にする`}
-                              aria-label={`この行の ${playerNames[seat]} を東家にする`}
+                              className={`wind-button ${game.row.windOrder[seat] === 0 ? 'active' : ''}`}
+                              onClick={() => cycleWindOrder(game.row.id, seat)}
+                              title={`${playerNames[seat]} の風を切り替える`}
+                              aria-label={`この行の ${playerNames[seat]} の風を切り替える`}
                             >
-                              {getWindLabel(game.row.eastSeat, seat)}
+                              {getWindLabel(game.row.windOrder, seat)}
                             </button>
                           </div>
                         </td>
