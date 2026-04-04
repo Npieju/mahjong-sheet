@@ -432,10 +432,30 @@ textarea {
 }
 
 .export-seat-placement {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.7rem;
+  padding: 3px 8px;
   color: #7e705e;
   font-size: 0.92rem;
   font-weight: 700;
   line-height: 1;
+  background: #f3eee5;
+}
+
+.export-seat-placement.rank-1 {
+  background: #e6f4ea;
+  color: #1f6b42;
+}
+
+.export-seat-placement.rank-4 {
+  background: #f8e8e5;
+  color: #9c3427;
+}
+
+.export-seat-placement.muted {
+  background: #f3eee5;
 }
 
 .export-seat-raw {
