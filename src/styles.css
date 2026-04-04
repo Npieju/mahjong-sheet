@@ -445,13 +445,13 @@ textarea {
 }
 
 .export-seat-placement.rank-1 {
-  background: #e6f4ea;
-  color: #1f6b42;
+  background: #fff1b8;
+  color: #8a5a00;
 }
 
 .export-seat-placement.rank-4 {
-  background: #f8e8e5;
-  color: #9c3427;
+  background: #e7ecff;
+  color: #304c9a;
 }
 
 .export-seat-placement.muted {
