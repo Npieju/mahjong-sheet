@@ -251,8 +251,8 @@ textarea {
 }
 
 .export-canvas {
-  width: 1120px;
-  padding: 36px;
+  width: 760px;
+  padding: 28px 24px;
   background:
     linear-gradient(180deg, #f9f7f0 0%, #ffffff 22%),
     linear-gradient(135deg, rgba(215, 190, 140, 0.18), rgba(255, 255, 255, 0));
@@ -328,7 +328,7 @@ textarea {
 }
 
 .export-standing-name {
-  font-size: 1rem;
+  font-size: 1.18rem;
   font-weight: 700;
 }
 
@@ -363,7 +363,7 @@ textarea {
 
 .export-column-header-card {
   min-width: 0;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border-right: 1px solid #ddd4c7;
 }
 
@@ -372,14 +372,14 @@ textarea {
 }
 
 .export-column-name {
-  font-size: 1rem;
+  font-size: 1.18rem;
   font-weight: 700;
 }
 
 .export-column-rank {
-  margin-top: 2px;
+  margin-top: 3px;
   color: #7e705e;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
 }
 
 .export-game-card {
@@ -413,7 +413,7 @@ textarea {
 
 .export-seat-card {
   min-width: 0;
-  padding: 14px 14px 12px;
+  padding: 16px 14px 14px;
   border-right: 1px solid #ece4d8;
 }
 
@@ -423,7 +423,7 @@ textarea {
 
 .export-seat-raw {
   margin-top: 0;
-  font-size: 1.58rem;
+  font-size: 1.82rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.02;
@@ -431,7 +431,7 @@ textarea {
 
 .export-seat-result {
   margin-top: 8px;
-  font-size: 1.18rem;
+  font-size: 1.32rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.02;
@@ -477,48 +477,6 @@ textarea {
   color: #666;
   font-size: 0.84rem;
   white-space: nowrap;
-}
-
-.table-wrap.exporting-image {
-  overflow: visible;
-  padding: 8px;
-  background: #ffffff;
-}
-
-.table-wrap.exporting-image .col-remove {
-  width: 0;
-}
-
-.table-wrap.exporting-image .action-header,
-.table-wrap.exporting-image .remove-cell {
-  display: none;
-}
-
-.table-wrap.exporting-image .add-row {
-  display: none;
-}
-
-.table-wrap.exporting-image .auto-cell {
-  background: transparent;
-}
-
-.table-wrap.exporting-image .score-table input,
-.table-wrap.exporting-image .score-table input:disabled {
-  color: #151515;
-  background: transparent;
-  border-color: transparent;
-  box-shadow: none;
-  opacity: 1;
-}
-
-.table-wrap.exporting-image .name-input,
-.table-wrap.exporting-image .score-input {
-  padding-inline: 0;
-}
-
-.table-wrap.exporting-image .score-table th,
-.table-wrap.exporting-image .score-table td {
-  border: 1px solid #dcdcdc;
 }
 
 .score-table {

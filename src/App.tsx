@@ -395,7 +395,7 @@ function App() {
       </header>
 
       <section className="table-panel">
-        <div className={`table-wrap ${exportingImage ? 'exporting-image' : ''}`}>
+        <div className="table-wrap">
           <table className="score-table">
             <colgroup>
               <col className="col-index" />
@@ -474,7 +474,7 @@ function App() {
                             ) : (
                               <div className="result-chip-placeholder" />
                             )}
-                            {exportingImage && windLabel === '-' ? null : (
+                            {windLabel === '-' ? null : (
                               <button
                                 type="button"
                                 className={`wind-button ${game.row.windOrder[seat] !== null ? 'active' : ''}`}
