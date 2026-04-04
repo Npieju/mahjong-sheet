@@ -304,6 +304,8 @@ textarea {
 }
 
 .export-standing-card {
+  display: flex;
+  flex-direction: column;
   padding: 14px 14px 12px;
   border: 1px solid #ddd4c7;
   background: rgba(255, 255, 255, 0.88);
@@ -311,8 +313,9 @@ textarea {
 
 .export-standing-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+  min-height: 2.9rem;
 }
 
 .export-rank-badge {
@@ -330,10 +333,12 @@ textarea {
 .export-standing-name {
   font-size: 1.18rem;
   font-weight: 700;
+  line-height: 1.22;
 }
 
 .export-standing-total {
-  margin-top: 12px;
+  margin-top: auto;
+  padding-top: 12px;
   font-size: 2rem;
   line-height: 1;
   font-weight: 700;
@@ -362,9 +367,13 @@ textarea {
 }
 
 .export-column-header-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   min-width: 0;
   padding: 12px 14px;
   border-right: 1px solid #ddd4c7;
+  min-height: 4.7rem;
 }
 
 .export-column-header-card:last-child {
@@ -374,10 +383,11 @@ textarea {
 .export-column-name {
   font-size: 1.18rem;
   font-weight: 700;
+  line-height: 1.22;
 }
 
 .export-column-rank {
-  margin-top: 3px;
+  margin-top: 6px;
   color: #7e705e;
   font-size: 0.92rem;
 }
