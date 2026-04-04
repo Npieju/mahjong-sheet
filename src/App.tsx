@@ -605,6 +605,7 @@ function App() {
 
                       return (
                         <div key={`export-${game.row.id}-${seat}`} className="export-seat-card">
+                          <div className="export-seat-placement">{result ? `${result.rank}位` : '-'}</div>
                           <div className="export-seat-raw">{rawPoints}</div>
                           <div className={`export-seat-result ${result ? (result.total >= 0 ? 'plus' : 'minus') : 'muted'}`}>
                             {result ? formatDelta(result.total) : '-'}
