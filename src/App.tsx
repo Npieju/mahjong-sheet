@@ -4,7 +4,25 @@ import { buildCsv } from './lib/csv';
 import { defaultState } from './lib/defaults';
 import { createGameRow, cycleWindOrderAtSeat, getTieBreakOrder, getWindLabel, resolveGameRow, SCORE_UNIT, type GameRow } from './lib/sheet';
 import { buildShareUrl, loadSavedState, readSharedState, saveState, serializeState } from './lib/state';
-import { calculateGameResults, DEFAULT_RULE, formatDelta, getOkaPoints, TRADITIONAL_RULE, type ScoringRule } from './lib/settlement';
+import { calculateGameResults, DEFAULT_RULE, formatDelta, getOkaPoints, getStandings, TRADITIONAL_RULE, type ScoringRule } from './lib/settlement';
+
+function formatPointValue(value: number) {
+  return new Intl.NumberFormat('ja-JP').format(value);
+}
+
+function formatPointInput(raw: string) {
+  if (raw === '' || raw === '-') {
+    return '-';
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+
+  if (Number.isNaN(parsed)) {
+    return raw;
+  }
+
+  return formatPointValue(parsed * SCORE_UNIT);
+}
 
 function App() {
   const initialState = readSharedState() ?? loadSavedState() ?? defaultState;
@@ -16,7 +34,7 @@ function App() {
   const [exportingImage, setExportingImage] = useState(false);
   const infoDetailsRef = useRef<HTMLDetailsElement | null>(null);
   const settingsDetailsRef = useRef<HTMLDetailsElement | null>(null);
-  const tableWrapRef = useRef<HTMLDivElement | null>(null);
+  const exportImageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     saveState({ playerNames, games, rules });
@@ -97,6 +115,8 @@ function App() {
   const shareUrl = useMemo(() => buildShareUrl(serializeState({ playerNames, games, rules })), [games, playerNames, rules]);
   const shareUrlPreview = useMemo(() => (shareUrl.length <= 10 ? shareUrl : `${shareUrl.slice(0, 10)}...`), [shareUrl]);
   const derivedOka = useMemo(() => getOkaPoints(rules), [rules]);
+  const standings = useMemo(() => getStandings(playerNames, cumulativeTotals), [cumulativeTotals, playerNames]);
+  const standingsBySeat = useMemo(() => new Map(standings.map((entry) => [entry.seat, entry])), [standings]);
 
   const updatePlayerName = (seat: number, value: string) => {
     setPlayerNames((current) => current.map((name, index) => (index === seat ? value : name)) as typeof current);
@@ -225,7 +245,7 @@ function App() {
   };
 
   const downloadImage = async () => {
-    const node = tableWrapRef.current;
+    const node = exportImageRef.current;
 
     if (!node) {
       return;
@@ -328,7 +348,7 @@ function App() {
                   className={`preset-button ${rules.mode === 'mahjongSoul' ? 'active' : ''}`}
                   onClick={() => applyPreset('mahjongSoul')}
                 >
-                  じゃんたまモード
+                  雀魂ルール
                 </button>
                 <button
                   type="button"
@@ -354,7 +374,7 @@ function App() {
                 <li>
                   {rules.mode === 'traditional'
                     ? `${rules.startPoint} 持ち ${rules.returnPoint} 返し。オカ ${derivedOka / 1000} をトップへ加算。`
-                    : `じゃんたまモード: (${rules.startPoint} を基準にした素点差) + 順位点。`}
+                    : `雀魂ルール: (${rules.startPoint} を基準にした素点差) + 順位点。`}
                 </li>
                 <li>ウマ {rules.uma.map((value) => `${value >= 0 ? '+' : ''}${value}`).join(' / ')}。</li>
                 <li>同点時は座順優先。必要なら - をクリックして各行の席順を指定。</li>
@@ -375,7 +395,7 @@ function App() {
       </header>
 
       <section className="table-panel">
-        <div ref={tableWrapRef} className={`table-wrap ${exportingImage ? 'exporting-image' : ''}`}>
+        <div className={`table-wrap ${exportingImage ? 'exporting-image' : ''}`}>
           <table className="score-table">
             <colgroup>
               <col className="col-index" />
@@ -520,6 +540,78 @@ function App() {
           <button type="button" onClick={copyShareUrl}>{copied ? 'URLコピー済み' : 'URLコピー'}</button>
           <button type="button" onClick={downloadCsv}>CSV</button>
           <button type="button" onClick={downloadImage}>{exportingImage ? '画像出力中' : '画像出力'}</button>
+        </div>
+
+        <div className="export-canvas-wrap" aria-hidden="true">
+          <div ref={exportImageRef} className="export-canvas">
+            <div className="export-header">
+              <div>
+                <p className="export-eyebrow">mahjong-sheet</p>
+                <h2>対局結果</h2>
+                <p className="export-rule-summary">
+                  {rules.mode === 'traditional'
+                    ? `${rules.startPoint} 持ち ${rules.returnPoint} 返し / オカ ${derivedOka / 1000} / ウマ ${rules.uma.join(' / ')}`
+                    : `雀魂ルール / 基準点 ${rules.startPoint} / 順位点 ${rules.uma.join(' / ')}`}
+                </p>
+              </div>
+              <div className="export-count">完了 {completeGames.length} / 全{games.length}局</div>
+            </div>
+
+            <div className="export-standings">
+              {standings.map((entry) => (
+                <section key={`standing-${entry.seat}`} className={`export-standing-card rank-${entry.rank}`}>
+                  <div className="export-standing-top">
+                    <span className="export-rank-badge">{entry.rank}位</span>
+                    <span className="export-standing-name">{entry.name}</span>
+                  </div>
+                  <div className={`export-standing-total ${entry.total >= 0 ? 'plus' : 'minus'}`}>{formatDelta(entry.total)}</div>
+                </section>
+              ))}
+            </div>
+
+            <div className="export-games">
+              {evaluatedGames.map((game, index) => (
+                <section key={`export-${game.row.id}`} className="export-game-card">
+                  <div className="export-game-head">
+                    <span className="export-game-index">#{index + 1}</span>
+                    <span className="export-game-status">
+                      {game.resolution.kind === 'complete'
+                        ? '計算済み'
+                        : game.resolution.kind === 'empty'
+                          ? '未入力'
+                          : game.resolution.kind === 'partial'
+                            ? '補完待ち'
+                            : game.resolution.kind === 'invalid'
+                              ? '数値不正'
+                              : `合計差 ${game.resolution.diff > 0 ? '+' : ''}${game.resolution.diff}`}
+                    </span>
+                  </div>
+                  <div className="export-game-grid">
+                    {playerNames.map((name, seat) => {
+                      const result = game.results?.find((entry) => entry.seat === seat) ?? null;
+                      const rawPoints =
+                        game.resolution.kind === 'complete'
+                          ? formatPointValue(game.resolution.scores[seat])
+                          : formatPointInput(game.row.scores[seat]);
+
+                      return (
+                        <div key={`export-${game.row.id}-${seat}`} className="export-seat-card">
+                          <div className="export-seat-name-row">
+                            <span className="export-seat-name">{name}</span>
+                            <span className="export-seat-rank-inline">{standingsBySeat.get(seat)?.rank}位</span>
+                          </div>
+                          <div className="export-seat-raw">{rawPoints}</div>
+                          <div className={`export-seat-result ${result ? (result.total >= 0 ? 'plus' : 'minus') : 'muted'}`}>
+                            {result ? formatDelta(result.total) : '-'}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
     </main>
