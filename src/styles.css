@@ -353,6 +353,35 @@ textarea {
   gap: 12px;
 }
 
+.export-column-header-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid #ddd4c7;
+  background: #f2eadc;
+}
+
+.export-column-header-card {
+  min-width: 0;
+  padding: 10px 14px;
+  border-right: 1px solid #ddd4c7;
+}
+
+.export-column-header-card:last-child {
+  border-right: 0;
+}
+
+.export-column-name {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.export-column-rank {
+  margin-top: 2px;
+  color: #7e705e;
+  font-size: 0.82rem;
+}
+
 .export-game-card {
   border: 1px solid #ddd4c7;
   background: rgba(255, 255, 255, 0.92);
@@ -384,7 +413,7 @@ textarea {
 
 .export-seat-card {
   min-width: 0;
-  padding: 12px 14px;
+  padding: 14px 14px 12px;
   border-right: 1px solid #ece4d8;
 }
 
@@ -392,35 +421,20 @@ textarea {
   border-right: 0;
 }
 
-.export-seat-name-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.export-seat-name {
-  font-size: 0.98rem;
-  font-weight: 700;
-}
-
-.export-seat-rank-inline {
-  color: #8a7e6a;
-  font-size: 0.8rem;
-}
-
 .export-seat-raw {
-  margin-top: 8px;
-  font-size: 1.28rem;
+  margin-top: 0;
+  font-size: 1.58rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  line-height: 1.02;
 }
 
 .export-seat-result {
-  margin-top: 4px;
-  font-size: 0.95rem;
+  margin-top: 8px;
+  font-size: 1.18rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  line-height: 1.02;
 }
 
 .export-seat-result.plus {

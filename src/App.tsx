@@ -570,6 +570,15 @@ function App() {
             </div>
 
             <div className="export-games">
+              <div className="export-column-header-grid">
+                {playerNames.map((name, seat) => (
+                  <div key={`export-column-${seat}`} className="export-column-header-card">
+                    <div className="export-column-name">{name}</div>
+                    <div className="export-column-rank">{standingsBySeat.get(seat)?.rank}位</div>
+                  </div>
+                ))}
+              </div>
+
               {evaluatedGames.map((game, index) => (
                 <section key={`export-${game.row.id}`} className="export-game-card">
                   <div className="export-game-head">
@@ -587,7 +596,7 @@ function App() {
                     </span>
                   </div>
                   <div className="export-game-grid">
-                    {playerNames.map((name, seat) => {
+                    {playerNames.map((_, seat) => {
                       const result = game.results?.find((entry) => entry.seat === seat) ?? null;
                       const rawPoints =
                         game.resolution.kind === 'complete'
@@ -596,10 +605,6 @@ function App() {
 
                       return (
                         <div key={`export-${game.row.id}-${seat}`} className="export-seat-card">
-                          <div className="export-seat-name-row">
-                            <span className="export-seat-name">{name}</span>
-                            <span className="export-seat-rank-inline">{standingsBySeat.get(seat)?.rank}位</span>
-                          </div>
                           <div className="export-seat-raw">{rawPoints}</div>
                           <div className={`export-seat-result ${result ? (result.total >= 0 ? 'plus' : 'minus') : 'muted'}`}>
                             {result ? formatDelta(result.total) : '-'}
